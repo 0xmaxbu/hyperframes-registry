@@ -25,6 +25,7 @@ const LOOP_CYCLE = {
   "bg-video": 0, "bg-video-portrait": 0,
   "bg-page-turn": 0, "bg-page-turn-portrait": 0,
   "bg-card-dance": 12, "bg-card-dance-portrait": 12,
+  "bg-sliding-stripes": 10, "bg-sliding-stripes-portrait": 10,
 };
 
 // ---- 极简 PNG 统计解码(8-bit, color type 2/6, 非交错):返回 {max, meanLuma, brightRatio} ----

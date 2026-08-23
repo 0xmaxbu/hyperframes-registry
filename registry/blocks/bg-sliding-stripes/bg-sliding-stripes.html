@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en"
+  data-composition-variables='[
+    {"id":"src","type":"image","label":"Image","description":"Image sliced into counter-sliding stripes (URL or project asset path)","default":"assets/bgss-placeholder.svg","maxLength":300},
+    {"id":"stripes","type":"number","label":"Stripes","description":"Number of stripes along the cut axis (6-24)","default":14,"min":6,"max":24,"step":1},
+    {"id":"axis","type":"enum","label":"Axis","description":"Stripe orientation and slide direction (auto = horizontal landscape / vertical portrait)","default":"auto","options":[{"value":"auto","label":"Auto"},{"value":"h","label":"Horizontal bands, slide sideways"},{"value":"v","label":"Vertical bands, slide up/down"}]},
+    {"id":"speed","type":"number","label":"Speed","description":"Full slide oscillations per 10s loop (integer, keeps the loop seamless) (1-3)","default":1,"min":1,"max":3,"step":1},
+    {"id":"max_shift","type":"number","label":"Max shift","description":"Peak slide distance in px; clamped to 40% of the overscan slack so edges never show (20-300)","default":140,"min":20,"max":300,"step":10},
+    {"id":"scrim","type":"number","label":"Scrim","description":"Black overlay strength for text readability 0-1","default":0.35,"min":0,"max":1,"step":0.05},
+    {"id":"dim","type":"number","label":"Dim","description":"De-bright / de-saturate 0-1","default":0,"min":0,"max":1,"step":0.05},
+    {"id":"bg","type":"color","label":"Background","description":"Base color shown before intro","default":"#000000"},
+    {"id":"intro","type":"number","label":"Intro","description":"Fade-in seconds","default":0.6,"min":0,"max":3,"step":0.1}
+  ]'
+>
+  <head>
+    <meta charset="utf-8" />
+    <title>bg-sliding-stripes</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+      body { background: #000; overflow: hidden; }
+      #bgss-root { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #000; }
+      #bgss-bg { position: absolute; inset: 0; z-index: 0; background: #000; }
+      #bgss-wrap { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; opacity: 0; }
+      #bgss-probe { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+      .bgss-stripe { position: absolute; left: 0; background-repeat: no-repeat; will-change: background-position; }
+      #bgss-scrim { position: absolute; inset: 0; z-index: 2; background: #000; opacity: 0; pointer-events: none; }
+    </style>
+  </head>
+  <body>
+    <div id="bgss-root"
+      data-composition-id="bg-sliding-stripes"
+      data-start="0"
+      data-duration="60"
+      data-width="1920"
+      data-height="1080"
+    >
+      <div id="bgss-bg"></div>
+      <div id="bgss-wrap">
+        <img id="bgss-probe" data-var-src="src" src="assets/bgss-placeholder.svg" alt="" />
+        <div id="bgss-stack"></div>
+      </div>
+      <div id="bgss-scrim"></div>
+      <div id="bgss-drv" class="clip" data-start="0" data-duration="60" data-track-index="0"
+        style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none"></div>
+    </div>
+    <script>
+      (function () {
+        "use strict";
+        window.__timelines = window.__timelines || {};
+
+        var DUR = 60, LC = 10;   // manifest 上限 = 6 × LOOP_CYCLE;整speed → 10s 归零回正
+
+        function clamp(v, lo, hi, d) { return v != null ? Math.max(lo, Math.min(hi, Number(v))) : d; }
+
+        var V = {};
+        try { V = (window.__hyperframes && window.__hyperframes.getVariables) ? window.__hyperframes.getVariables() : {}; } catch (e) { V = {}; }
+        var nStripes = Math.round(clamp(V.stripes, 6, 24, 14));
+        var axis = String(V.axis || "auto");
+        var speed = Math.round(clamp(V.speed, 1, 3, 1));            // 整数周期/LC,保回正无缝
+        var maxShift = clamp(V.max_shift, 20, 300, 140);
+        var scrim = clamp(V.scrim, 0, 1, 0.35);
+        var dim = clamp(V.dim, 0, 1, 0);
+        var bg = V.bg || "#000";
+        var introDur = clamp(V.intro, 0, 3, 0.6);
+
+        var root = document.getElementById("bgss-root");
+        var bgEl = document.getElementById("bgss-bg");
+        var wrap = document.getElementById("bgss-wrap");
+        var stack = document.getElementById("bgss-stack");
+        var probe = document.getElementById("bgss-probe");
+        var scrimEl = document.getElementById("bgss-scrim");
+        bgEl.style.background = bg;
+        if (dim > 0) wrap.style.filter = "brightness(" + (1 - 0.45 * dim) + ") saturate(" + (1 - 0.6 * dim) + ")";
+
+        var w = root.clientWidth || 1920, h = root.clientHeight || 1080;
+        var portrait = h > w;
+
+        // 条带方向:横屏默认横条横滑,竖屏默认竖条竖滑(axis h/v 强制覆盖)
+        var horiz = axis === "v" ? false : axis === "h" ? true : !portrait;
+
+        var tl = gsap.timeline({ paused: true });
+        window.__timelines["bg-sliding-stripes"] = tl;
+
+        var stripes = [];
+
+        function build(mw, mh) {
+          for (var i = stack.children.length - 1; i >= 0; i--) stack.removeChild(stack.children[i]);
+          stripes = [];
+          // 过扫描 1.3×(滑移轴):任何滑移量下条带边缘不出画面;shift 再钳到 40% 余量
+          var cs = Math.max(w / mw, h / mh);
+          var scale = horiz ? Math.max(cs, 1.3 * w / mw) : Math.max(cs, 1.3 * h / mh);
+          var rw = mw * scale, rh = mh * scale;
+          var offX = (rw - w) / 2, offY = (rh - h) / 2;
+          var shift = Math.min(maxShift, 0.4 * (horiz ? rw - w : rh - h));
+          var n = nStripes;
+          for (var i2 = 0; i2 < n; i2++) {
+            var el = document.createElement("div");
+            el.className = "bgss-stripe";
+            var base;
+            if (horiz) {
+              el.style.width = w + "px";
+              el.style.height = (h / n) + "px";
+              el.style.top = (i2 * h / n) + "px";
+              base = { x: -offX, y: -(offY + i2 * h / n), key: "x" };
+            } else {
+              el.style.width = (w / n) + "px";
+              el.style.height = h + "px";
+              el.style.left = (i2 * w / n) + "px";
+              base = { x: -(offX + i2 * w / n), y: -offY, key: "y" };
+            }
+            el.style.backgroundImage = "url(" + probe.src + ")";
+            el.style.backgroundSize = rw.toFixed(2) + "px " + rh.toFixed(2) + "px";
+            el._base = base;
+            el._phase = (i2 % 2) * Math.PI;                          // 奇偶反向
+            el._shift = shift;
+            stack.appendChild(el);
+            stripes.push(el);
+          }
+          draw(_t);
+        }
+
+        // ---- 奇偶反向正弦滑移;t=LC 时全部归零对齐(循环点即回正瞬间) ----
+        var _t = 0;
+        function draw(t) {
+          _t = t;
+          var ph = 2 * Math.PI * speed * t / LC;
+          for (var i = 0; i < stripes.length; i++) {
+            var el = stripes[i];
+            var off = el._shift * Math.sin(ph + el._phase);
+            el.style.backgroundPosition =
+              (el._base.x + (el._base.key === "x" ? off : 0)).toFixed(2) + "px " +
+              (el._base.y + (el._base.key === "y" ? off : 0)).toFixed(2) + "px";
+          }
+        }
+        var st = {};
+        Object.defineProperty(st, "t", { get: function () { return _t; }, set: function (v) { draw(v); } });
+
+        function dims() { return (probe.complete && probe.naturalWidth) ? [probe.naturalWidth, probe.naturalHeight] : null; }
+        var d0 = dims();
+        if (d0) build(d0[0], d0[1]);
+        else {
+          var onReady = function () { var dd = dims(); if (dd) { build(dd[0], dd[1]); probe.removeEventListener("load", onReady); } };
+          probe.addEventListener("load", onReady);
+          probe.addEventListener("error", function () {
+            if (probe.src.indexOf("bgss-placeholder") < 0) probe.src = "assets/bgss-placeholder.svg";
+          });
+        }
+
+        draw(0);
+        tl.to(st, { t: DUR, duration: DUR, ease: "none" }, 0);
+        tl.to(wrap, { opacity: 1, duration: introDur, ease: "power2.out" }, 0);
+        tl.to(scrimEl, { opacity: scrim, duration: introDur, ease: "power2.out" }, 0);
+        if (tl.duration() < DUR) tl.set({}, {}, DUR);
+      })();
+    </script>
+  </body>
+</html>
