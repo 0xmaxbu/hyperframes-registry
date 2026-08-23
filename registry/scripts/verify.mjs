@@ -19,7 +19,7 @@ const LOOP_CYCLE = {
   "bg-matrix": 8, "bg-matrix-portrait": 8,
   "bg-data-stream": 8, "bg-data-stream-portrait": 8,
   "bg-glitch": 4, "bg-glitch-portrait": 4,
-  "bg-aurora": 20, "bg-aurora-portrait": 20,
+  "bg-aurora": 30, "bg-aurora-portrait": 30,
   "bg-bauhaus": 12, "bg-bauhaus-portrait": 12,
   "bg-particles": 12, "bg-particles-portrait": 12,
   "bg-image": 0, "bg-image-portrait": 0,
@@ -79,10 +79,19 @@ for (const it of items) {
     buildHost({ name: it.name, dir: it.dir, manifest: it.manifest, outDir: host });
     const loopAt = [0.25, 0.5, 0.75, 0.95].map((k) => +(k * dur).toFixed(2));
     // 在动采样须相位分散:时长是 LC 整数倍时,按 dur 的等分取样会混叠到同一相位
+    // 相位 0.13/0.46/0.79 跨圈循环取点(LC 大时单圈放不满 3 个)直到取满 4 个或到达 dur
     // "在动"判据只适用循环块(LC>0):一次性块(ken-burns/入场后驻留)静止是正确行为,由人工验收件覆盖
-    const animAt = lc > 0
-      ? [0.13, 1.38, 2.63, 3.88].map((k) => +(k * lc).toFixed(2))
-      : [];
+    const animAt = [];
+    if (lc > 0) {
+      for (let n = 0; animAt.length < 4; n++) {
+        let added = false;
+        for (const f of [0.13, 0.46, 0.79]) {
+          const t = +((n + f) * lc).toFixed(2);
+          if (t < dur - 0.01) { animAt.push(t); added = true; if (animAt.length >= 4) break; }
+        }
+        if (!added) break;
+      }
+    }
     const seamAt = lc > 0 ? [+(0.5 * lc).toFixed(2), +(1.5 * lc).toFixed(2)] : [];
     const times = [...new Set([...loopAt, ...animAt, ...seamAt])].sort((a, b) => a - b)
       .filter((t) => t < dur);

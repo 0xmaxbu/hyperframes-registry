@@ -42,8 +42,8 @@
         "use strict";
         window.__timelines = window.__timelines || {};
 
-        var DUR = 60;          // manifest duration = 3 × LOOP_CYCLE
-        var LOOP_CYCLE = 20;   // 四轮验收:平移放慢(轨迹 ~240px/s);六边形自旋/变形另行加速
+        var DUR = 60;          // manifest duration = 2 × LOOP_CYCLE
+        var LOOP_CYCLE = 30;   // 五轮:直径 1.5×长边 → 轨迹加大,LC 拉长保平移 ~230px/s;自旋倍频上调保实时速度
 
         function hash01(n) { var x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
         function clamp(v, lo, hi, d) { return v != null ? Math.max(lo, Math.min(hi, Number(v))) : d; }
@@ -72,47 +72,44 @@
 
         var N = 24;
         var dom = w >= h, Ld = dom ? w : h;   // 主轴 = 长边(侵染方向);色块 R 与轨迹都以长边归一
-        function hexR(th) { var seg = Math.PI / 3, m = ((th % seg) + seg) % seg; return Math.cos(seg / 2) / Math.cos(m - seg / 2); }   // 正六边形径向函数(内切圆 = 1)
 
         var blobs = [];
         for (var i = 0; i < density; i++) {
-          // 六边形基底 × 乘性谐波(方向 ±、整倍频、振幅脉动)→ 棱面感不规则变形(消除四边形观感)
-          var AMP = [0, 0.14, 0.10, 0.07, 0.05];
+          // 每组谐波独立:方向 ±、整数倍频 vf、振幅脉动 gf —— 混向混频 → 轮廓不规则变形(五轮回退,去六边形基底)
+          // 振幅按谐波阶数递减(Σ≤0.54 → rr 恒正)
+          var AMP = [0, 0.16, 0.12, 0.09, 0.06];
           var harm = [];
           for (var m = 1; m <= 4; m++) harm.push({
             a: AMP[m] * (0.75 + 0.5 * hash01(i * 11 + m * 3)) * intensity, w: m,
             psi: hash01(i * 17 + m * 7) * Math.PI * 2,
             dir: hash01(i * 29 + m * 5) < 0.5 ? -1 : 1,
-            vf: 2 + Math.floor(hash01(i * 37 + m * 11) * 4),
+            vf: 3 + Math.floor(hash01(i * 37 + m * 11) * 5),
             gf: 1 + Math.floor(hash01(i * 43 + m * 17) * 2),
             pf: hash01(i * 41 + m * 13) * Math.PI * 2
           });
-          // 圆轨迹(四轮定案):圆心压在主轴画外近处,θ=0(wrap)完全出画;θ=π 深入过屏幕中心
-          // → 巨型色块从边缘大面积侵染屏幕;直径 = 长边一半,完全出画才回绕换层
-          var Rt = 0.45 + 0.1 * hash01(i * 61 + 6);
+          // 圆轨迹(五轮定案):圆心压在主轴画外,θ=0(wrap)完全出画;θ=π 深入过屏幕中心
+          // → 直径 1.5×长边的巨型色块从边缘侵染屏幕;完全出画才回绕换层
+          var Rt = 0.8 + 0.08 * hash01(i * 61 + 6);
           blobs.push({
             phi: (i + 0.5 * hash01(i * 53 + 4)) / density,                  // 资历相位均匀铺开(保序)
             sg: i % 2 ? 1 : -1,
             t: 0.15 + 0.7 * ((i * 0.618034 + hash01(i * 67 + 8)) % 1),      // 旁轴锚点黄金比铺开
-            Rt: Rt, offA: Rt + 0.12,
-            ho: hash01(i * 71 + 9) * Math.PI / 3,                           // 六边形初始朝向
-            hv: 2 + Math.floor(hash01(i * 73 + 10) * 3),                    // 六边形自旋(每 LC 整圈 → 无缝,已加速)
+            Rt: Rt, offA: Rt + 0.06,
             rp: hash01(i * 13 + 11) * Math.PI * 2,                          // R 呼吸相位
-            R: (0.25 + 0.04 * hash01(i * 23 + 5)) * Ld,                     // 直径 ≥ 视频最长边一半
+            R: (0.73 + 0.05 * hash01(i * 23 + 5)) * Ld,                     // 直径 = 视频最长边 ~1.5 倍
             harm: harm,
             color: colors[i % colors.length]                                // i = 资历名次 → 同色层距 = 调色板数(≥3 即满足同色差 3)
           });
         }
 
         function traceBlob(b, cx, cy, R, ph) {
-          var spin = b.ho + 2 * Math.PI * b.hv * ph;   // 六边形整体自旋(整圈/循环 → 无缝)
           var pts = [];
           for (var k = 0; k < N; k++) {
-            var th = 2 * Math.PI * k / N, rr = hexR(th + spin);
+            var th = 2 * Math.PI * k / N, rr = 1;
             for (var hi = 0; hi < b.harm.length; hi++) {
               var hm = b.harm[hi];
               var amp = hm.a * (0.7 + 0.3 * Math.sin(2 * Math.PI * hm.gf * ph + hm.pf));   // 振幅脉动 → 呼吸式变形
-              rr *= 1 + amp * Math.sin(hm.w * th + hm.dir * 2 * Math.PI * hm.vf * ph + hm.psi);
+              rr += amp * Math.sin(hm.w * th + hm.dir * 2 * Math.PI * hm.vf * ph + hm.psi);
             }
             pts.push([cx + Math.cos(th) * R * rr, cy + Math.sin(th) * R * rr]);
           }
