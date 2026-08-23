@@ -30,7 +30,6 @@ const LOOP_CYCLE = {
   "bg-highlight-zoom": 0, "bg-highlight-zoom-portrait": 0,
   "text-word-stagger": 0, "text-word-stagger-portrait": 0,
   "text-center-burst": 0, "text-center-burst-portrait": 0,
-  "text-word-echo": 0, "text-word-echo-portrait": 0,
   "text-bar-escort": 0, "text-bar-escort-portrait": 0,
   "text-focus-cycle": 6, "text-focus-cycle-portrait": 6,
   "text-fold-swap": 0, "text-fold-swap-portrait": 0,
