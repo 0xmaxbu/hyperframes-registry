@@ -70,8 +70,6 @@
         if (dim > 0) canvas.style.filter = "brightness(" + (1 - 0.45 * dim) + ") saturate(" + (1 - 0.6 * dim) + ")";
         var ctx = canvas.getContext("2d");
 
-        // 交错覆盖中心表(中→四角→四边),density 取前 N 个保证均匀铺满
-        var CENTERS = [[0.5, 0.5], [0.18, 0.24], [0.82, 0.78], [0.82, 0.22], [0.18, 0.8], [0.5, 0.12], [0.5, 0.88], [0.12, 0.5], [0.88, 0.5]];
         var N = 24;
 
         var blobs = [];
@@ -88,14 +86,18 @@
             gf: 1 + Math.floor(hash01(i * 43 + m * 17) * 2),
             pf: hash01(i * 41 + m * 13) * Math.PI * 2
           });
-          var c = CENTERS[i % CENTERS.length];
+          // 圆轨迹(验收三轮定案):锚点铺在画外一圈(黄金角分布),wrap 点(θ=0)落在主轴画外最远处
+          // → 每个色块沿固定圆轨迹穿屏,完全出画那一刻回绕到资历序最底层,层切换不可见
+          var ang = 2 * Math.PI * i * 2.39996;
+          var Cx = 0.5 + 0.95 * Math.cos(ang), Cy = 0.5 + 0.95 * Math.sin(ang);
+          var onX = Math.abs(Cx - 0.5) >= Math.abs(Cy - 0.5);
+          var sg = onX ? (Cx > 0.5 ? 1 : -1) : (Cy > 0.5 ? 1 : -1);
           blobs.push({
-            bx: c[0] + (hash01(i * 71 + 1) - 0.5) * 0.12, by: c[1] + (hash01(i * 73 + 2) - 0.5) * 0.12,
-            ax: 0.03 + 0.03 * hash01(i * 7 + 3), ay: 0.03 + 0.03 * hash01(i * 9 + 4),
-            px: hash01(i * 13 + 1) * Math.PI * 2, py: hash01(i * 19 + 2) * Math.PI * 2,
-            px2: hash01(i * 13 + 11) * Math.PI * 2, py2: hash01(i * 19 + 12) * Math.PI * 2,
-            dk: 1 + (i % 2), dp: hash01(i * 47 + 2) * Math.PI * 2,          // 深度键频率/相位(整倍频 → 无缝)
-            R: 0.45 + 0.17 * hash01(i * 23 + 5), harm: harm, color: colors[i % colors.length]
+            phi: (i + 0.5 * hash01(i * 53 + 4)) / density,                  // 资历相位均匀铺开(保序)
+            Cx: Cx, Cy: Cy, Rc: 0.65 + 0.2 * hash01(i * 61 + 6), onX: onX, sg: sg,
+            rp: hash01(i * 13 + 11) * Math.PI * 2,                          // R 呼吸相位
+            R: 0.5 + 0.18 * hash01(i * 23 + 5), harm: harm,
+            color: colors[i % colors.length]                                // i = 资历名次 → 同色层距 = 调色板数(≥3 即满足同色差 3)
           });
         }
 
@@ -122,18 +124,19 @@
           var ph = t / LOOP_CYCLE;
           ctx.globalAlpha = 1; ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
           var R0 = Math.min(w, h);
-          // 动态叠压:按深度键排序绘制(键大的后画 = 在上层)→ 色块轮流被遮挡,无永久顶层
+          // 资历序绘制:progress = frac(ph + phi) 升序 → 在屏最久者最后画(最上层);
+          // wrap(progress 1→0)发生在色块完全出画时,从顶层掉到底层 → zIndex 切换不可见
           var order = [];
           for (var oi = 0; oi < density; oi++) order.push(oi);
-          order.sort(function (a, b) { return Math.sin(2 * Math.PI * blobs[b].dk * ph + blobs[b].dp) - Math.sin(2 * Math.PI * blobs[a].dk * ph + blobs[a].dp); });
+          order.sort(function (p, q) { return ((ph + blobs[p].phi) % 1) - ((ph + blobs[q].phi) % 1); });
           for (var si = 0; si < order.length; si++) {
-            var i = order[si];
-            var b = blobs[i];
-            // 中心漂移双谐波(基频+2×,不同相位)→ 不规则路径,非规则圆轨道;R 呼吸脉动(整数倍频,无缝)
-            var cx = (b.bx + b.ax * Math.sin(2 * Math.PI * freq * ph + b.px) + 0.4 * b.ax * Math.sin(2 * Math.PI * (freq + 2) * ph + b.px2)) * w;
-            var cy = (b.by + b.ay * Math.sin(2 * Math.PI * freq * ph + b.py) + 0.4 * b.ay * Math.sin(2 * Math.PI * (freq + 2) * ph + b.py2)) * h;
-            var Rt = b.R * (1 + 0.12 * Math.sin(2 * Math.PI * (1 + i % 3) * ph + b.px2));
-            traceBlob(b, cx, cy, Rt * R0, ph);
+            var i = order[si], b = blobs[i];
+            var pgr = (ph + b.phi) % 1;
+            var th = 2 * Math.PI * pgr, nx, ny;
+            if (b.onX) { nx = b.Cx + b.sg * b.Rc * Math.cos(th); ny = b.Cy + 0.9 * b.Rc * Math.sin(th); }
+            else { nx = b.Cx + 0.9 * b.Rc * Math.cos(th); ny = b.Cy + b.sg * b.Rc * Math.sin(th); }
+            var Rt = b.R * (1 + 0.12 * Math.sin(2 * Math.PI * (1 + i % 3) * ph + b.rp));
+            traceBlob(b, nx * w, ny * h, Rt * R0, pgr);
             ctx.globalAlpha = 0.95 * a; ctx.fillStyle = b.color; ctx.fill();
           }
           ctx.globalAlpha = 0.22 * a; ctx.strokeStyle = dark ? "#67e8f9" : "#f9a8d4"; ctx.lineWidth = 1.5;
