@@ -19,7 +19,6 @@ const LOOP_CYCLE = {
   "bg-matrix": 8, "bg-matrix-portrait": 8,
   "bg-data-stream": 8, "bg-data-stream-portrait": 8,
   "bg-glitch": 4, "bg-glitch-portrait": 4,
-  "bg-aurora": 30, "bg-aurora-portrait": 30,
   "bg-bauhaus": 12, "bg-bauhaus-portrait": 12,
   "bg-particles": 12, "bg-particles-portrait": 12,
   "bg-image": 0, "bg-image-portrait": 0,
