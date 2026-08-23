@@ -2,7 +2,7 @@
 <html lang="en"
   data-composition-variables='[
     {"id":"colors","type":"string","label":"Colors","description":"Comma-separated hex list, e.g. #3b82f6,#8b5cf6,#db2777","default":"#3b82f6,#8b5cf6,#db2777,#f59e0b","maxLength":200},
-    {"id":"density","type":"number","label":"Density","description":"Blob count (3-9)","default":6,"min":3,"max":9,"step":1},
+    {"id":"density","type":"number","label":"Density","description":"Blob count (3-8; 8 = full edge-midpoint + corner track set)","default":8,"min":3,"max":8,"step":1},
     {"id":"speed","type":"number","label":"Speed","description":"Drift speed feel (10-200)","default":50,"min":10,"max":200,"step":10},
     {"id":"intensity","type":"number","label":"Intensity","description":"Blob deformation 0-1","default":0.6,"min":0,"max":1,"step":0.05},
     {"id":"base","type":"enum","label":"Base","description":"Light or dark canvas base","default":"light","options":[{"value":"light","label":"Light"},{"value":"dark","label":"Dark"}]},
@@ -52,7 +52,7 @@
         try { V = (window.__hyperframes && window.__hyperframes.getVariables) ? window.__hyperframes.getVariables() : {}; } catch (e) { V = {}; }
         var colors = String(V.colors || "").split(",").map(function (s) { return s.trim(); }).filter(Boolean);
         if (!colors.length) colors = ["#3b82f6", "#8b5cf6", "#db2777", "#f59e0b"];
-        var density = clamp(V.density, 3, 9, 6);
+        var density = clamp(V.density, 3, 8, 8);
         var speed = clamp(V.speed, 10, 200, 50);
         var intensity = clamp(V.intensity, 0, 1, 0.6);
         var dark = V.base === "dark";
@@ -71,11 +71,18 @@
         var ctx = canvas.getContext("2d");
 
         var N = 24;
-        var dom = w >= h, Ld = dom ? w : h;   // 主轴 = 长边(侵染方向);色块 R 与轨迹都以长边归一
+        var Ld = Math.max(w, h);   // 长边:色块直径/圆心偏移/轨迹半径的统一基准
+        var D = Math.max(3, Math.min(8, Math.round(density)));
+
+        // 八条圆轨道(六轮定案):a 组四边中点(0-3)+ b 组四角(4-7),圆心 = 视频中心向外 0.2·Ld
+        // 对角对(0,2)(1,3)(4,6)(5,7)相位差半周期 —— 你进(θ=π 最深入)我正好退(θ=0 出画)
+        var DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0], [0.7071, -0.7071], [0.7071, 0.7071], [-0.7071, 0.7071], [-0.7071, -0.7071]];
+        var PHIS = [0, 0.125, 0.5, 0.625, 0.25, 0.375, 0.75, 0.875];       // 对角差 0.5,全集均匀铺开(每 1/8 周期一块到极位)
+        var TR = 1.15 * Ld;                                                 // 统一轨迹半径:wrap(θ=0)完全出画(含对角向余量)
 
         var blobs = [];
-        for (var i = 0; i < density; i++) {
-          // 每组谐波独立:方向 ±、整数倍频 vf、振幅脉动 gf —— 混向混频 → 轮廓不规则变形(五轮回退,去六边形基底)
+        for (var i = 0; i < D; i++) {
+          // 每组谐波独立:方向 ±、整数倍频 vf、振幅脉动 gf —— 混向混频 → 轮廓不规则变形
           // 振幅按谐波阶数递减(Σ≤0.54 → rr 恒正)
           var AMP = [0, 0.16, 0.12, 0.09, 0.06];
           var harm = [];
@@ -87,16 +94,13 @@
             gf: 1 + Math.floor(hash01(i * 43 + m * 17) * 2),
             pf: hash01(i * 41 + m * 13) * Math.PI * 2
           });
-          // 圆轨迹(五轮定案):圆心压在主轴画外,θ=0(wrap)完全出画;θ=π 深入过屏幕中心
-          // → 直径 1.5×长边的巨型色块从边缘侵染屏幕;完全出画才回绕换层
-          var Rt = 0.8 + 0.08 * hash01(i * 61 + 6);
           blobs.push({
-            phi: (i + 0.5 * hash01(i * 53 + 4)) / density,                  // 资历相位均匀铺开(保序)
-            sg: i % 2 ? 1 : -1,
-            t: 0.15 + 0.7 * ((i * 0.618034 + hash01(i * 67 + 8)) % 1),      // 旁轴锚点黄金比铺开
-            Rt: Rt, offA: Rt + 0.06,
+            phi: PHIS[i],
+            ux: DIRS[i][0], uy: DIRS[i][1],
+            ccx: w / 2 + 0.2 * Ld * DIRS[i][0], ccy: h / 2 + 0.2 * Ld * DIRS[i][1],
+            Rt: TR, rot: (Math.floor(i / 2) % 2 ? 1 : -1),                  // 绕圆方向按对交替
             rp: hash01(i * 13 + 11) * Math.PI * 2,                          // R 呼吸相位
-            R: (0.73 + 0.05 * hash01(i * 23 + 5)) * Ld,                     // 直径 = 视频最长边 ~1.5 倍
+            R: (0.59 + 0.03 * hash01(i * 23 + 5)) * Ld,                     // 直径 = 视频最长边 ~1.2 倍
             harm: harm,
             color: colors[i % colors.length]                                // i = 资历名次 → 同色层距 = 调色板数(≥3 即满足同色差 3)
           });
@@ -127,17 +131,16 @@
           // 资历序绘制:progress = frac(ph + phi) 升序 → 在屏最久者最后画(最上层);
           // wrap(progress 1→0)发生在色块完全出画时,从顶层掉到底层 → zIndex 切换不可见
           var order = [];
-          for (var oi = 0; oi < density; oi++) order.push(oi);
+          for (var oi = 0; oi < D; oi++) order.push(oi);
           order.sort(function (p, q) { return ((ph + blobs[p].phi) % 1) - ((ph + blobs[q].phi) % 1); });
           for (var si = 0; si < order.length; si++) {
             var i = order[si], b = blobs[i];
             var pgr = (ph + b.phi) % 1;
-            var th = 2 * Math.PI * pgr;
-            var dn = 0.5 + b.sg * (b.offA + b.Rt * Math.cos(th));   // 主轴(长边)坐标
-            var un = b.t + 0.8 * b.Rt * Math.sin(th);               // 旁轴坐标
-            var nx = dom ? dn : un, ny = dom ? un : dn;
+            var th = b.rot * 2 * Math.PI * pgr;                     // θ=0 = 沿本轨外向(wrap 完全出画),θ=π 深入对侧
+            var cx = b.ccx + Math.cos(th) * b.Rt;
+            var cy = b.ccy + Math.sin(th) * b.Rt;
             var Rp = b.R * (1 + 0.12 * Math.sin(2 * Math.PI * (1 + i % 3) * ph + b.rp));
-            traceBlob(b, nx * w, ny * h, Rp, ph);
+            traceBlob(b, cx, cy, Rp, ph);
             ctx.globalAlpha = 0.95 * a; ctx.fillStyle = b.color; ctx.fill();
           }
           ctx.globalAlpha = 0.22 * a; ctx.strokeStyle = dark ? "#67e8f9" : "#f9a8d4"; ctx.lineWidth = 1.5;

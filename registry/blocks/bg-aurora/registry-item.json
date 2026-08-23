@@ -9,7 +9,7 @@
   "duration": 60,
   "variables": [
     { "id": "colors", "type": "string", "role": "style", "label": "Colors", "description": "Comma-separated hex list, e.g. #3b82f6,#8b5cf6,#db2777", "default": "#3b82f6,#8b5cf6,#db2777,#f59e0b", "maxLength": 200 },
-    { "id": "density", "type": "number", "role": "style", "label": "Density", "description": "Blob count (3-9)", "default": 6, "min": 3, "max": 9, "step": 1 },
+    { "id": "density", "type": "number", "role": "style", "label": "Density", "description": "Blob count (3-8; 8 = full edge-midpoint + corner track set)", "default": 8, "min": 3, "max": 8, "step": 1 },
     { "id": "speed", "type": "number", "role": "style", "label": "Speed", "description": "Drift speed feel (10-200)", "default": 50, "min": 10, "max": 200, "step": 10 },
     { "id": "intensity", "type": "number", "role": "style", "label": "Intensity", "description": "Blob deformation 0-1", "default": 0.6, "min": 0, "max": 1, "step": 0.05 },
     { "id": "base", "type": "enum", "role": "style", "label": "Base", "description": "Light or dark canvas base", "default": "light", "options": [{"value":"light","label":"Light"},{"value":"dark","label":"Dark"}] },
