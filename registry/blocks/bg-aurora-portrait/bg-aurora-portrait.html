@@ -42,8 +42,8 @@
         "use strict";
         window.__timelines = window.__timelines || {};
 
-        var DUR = 60;          // manifest duration = 6 × LOOP_CYCLE
-        var LOOP_CYCLE = 10;
+        var DUR = 60;          // manifest duration = 3 × LOOP_CYCLE
+        var LOOP_CYCLE = 20;   // 四轮验收:平移放慢(轨迹 ~240px/s);六边形自旋/变形另行加速
 
         function hash01(n) { var x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
         function clamp(v, lo, hi, d) { return v != null ? Math.max(lo, Math.min(hi, Number(v))) : d; }
@@ -71,44 +71,48 @@
         var ctx = canvas.getContext("2d");
 
         var N = 24;
+        var dom = w >= h, Ld = dom ? w : h;   // 主轴 = 长边(侵染方向);色块 R 与轨迹都以长边归一
+        function hexR(th) { var seg = Math.PI / 3, m = ((th % seg) + seg) % seg; return Math.cos(seg / 2) / Math.cos(m - seg / 2); }   // 正六边形径向函数(内切圆 = 1)
 
         var blobs = [];
         for (var i = 0; i < density; i++) {
-          // 每组谐波独立:方向 ±、整数倍频 vf、振幅脉动 gf —— 混向混频 → 轮廓不规则变形而非整体旋转
-          // 振幅按谐波阶数递减(Σ≤0.54 → rr 恒正),加大到肉眼明显的"变形虫"程度
-          var AMP = [0, 0.16, 0.12, 0.09, 0.06];
+          // 六边形基底 × 乘性谐波(方向 ±、整倍频、振幅脉动)→ 棱面感不规则变形(消除四边形观感)
+          var AMP = [0, 0.14, 0.10, 0.07, 0.05];
           var harm = [];
           for (var m = 1; m <= 4; m++) harm.push({
             a: AMP[m] * (0.75 + 0.5 * hash01(i * 11 + m * 3)) * intensity, w: m,
             psi: hash01(i * 17 + m * 7) * Math.PI * 2,
             dir: hash01(i * 29 + m * 5) < 0.5 ? -1 : 1,
-            vf: 1 + Math.floor(hash01(i * 37 + m * 11) * 3),
+            vf: 2 + Math.floor(hash01(i * 37 + m * 11) * 4),
             gf: 1 + Math.floor(hash01(i * 43 + m * 17) * 2),
             pf: hash01(i * 41 + m * 13) * Math.PI * 2
           });
-          // 圆轨迹(验收三轮定案):锚点铺在画外一圈(黄金角分布),wrap 点(θ=0)落在主轴画外最远处
-          // → 每个色块沿固定圆轨迹穿屏,完全出画那一刻回绕到资历序最底层,层切换不可见
-          var ang = 2 * Math.PI * i * 2.39996;
-          var Cx = 0.5 + 0.95 * Math.cos(ang), Cy = 0.5 + 0.95 * Math.sin(ang);
-          var onX = Math.abs(Cx - 0.5) >= Math.abs(Cy - 0.5);
-          var sg = onX ? (Cx > 0.5 ? 1 : -1) : (Cy > 0.5 ? 1 : -1);
+          // 圆轨迹(四轮定案):圆心压在主轴画外近处,θ=0(wrap)完全出画;θ=π 深入过屏幕中心
+          // → 巨型色块从边缘大面积侵染屏幕;直径 = 长边一半,完全出画才回绕换层
+          var Rt = 0.45 + 0.1 * hash01(i * 61 + 6);
           blobs.push({
             phi: (i + 0.5 * hash01(i * 53 + 4)) / density,                  // 资历相位均匀铺开(保序)
-            Cx: Cx, Cy: Cy, Rc: 0.65 + 0.2 * hash01(i * 61 + 6), onX: onX, sg: sg,
+            sg: i % 2 ? 1 : -1,
+            t: 0.15 + 0.7 * ((i * 0.618034 + hash01(i * 67 + 8)) % 1),      // 旁轴锚点黄金比铺开
+            Rt: Rt, offA: Rt + 0.12,
+            ho: hash01(i * 71 + 9) * Math.PI / 3,                           // 六边形初始朝向
+            hv: 2 + Math.floor(hash01(i * 73 + 10) * 3),                    // 六边形自旋(每 LC 整圈 → 无缝,已加速)
             rp: hash01(i * 13 + 11) * Math.PI * 2,                          // R 呼吸相位
-            R: 0.5 + 0.18 * hash01(i * 23 + 5), harm: harm,
+            R: (0.25 + 0.04 * hash01(i * 23 + 5)) * Ld,                     // 直径 ≥ 视频最长边一半
+            harm: harm,
             color: colors[i % colors.length]                                // i = 资历名次 → 同色层距 = 调色板数(≥3 即满足同色差 3)
           });
         }
 
         function traceBlob(b, cx, cy, R, ph) {
+          var spin = b.ho + 2 * Math.PI * b.hv * ph;   // 六边形整体自旋(整圈/循环 → 无缝)
           var pts = [];
           for (var k = 0; k < N; k++) {
-            var th = 2 * Math.PI * k / N, rr = 1;
+            var th = 2 * Math.PI * k / N, rr = hexR(th + spin);
             for (var hi = 0; hi < b.harm.length; hi++) {
               var hm = b.harm[hi];
               var amp = hm.a * (0.7 + 0.3 * Math.sin(2 * Math.PI * hm.gf * ph + hm.pf));   // 振幅脉动 → 呼吸式变形
-              rr += amp * Math.sin(hm.w * th + hm.dir * 2 * Math.PI * hm.vf * ph + hm.psi);
+              rr *= 1 + amp * Math.sin(hm.w * th + hm.dir * 2 * Math.PI * hm.vf * ph + hm.psi);
             }
             pts.push([cx + Math.cos(th) * R * rr, cy + Math.sin(th) * R * rr]);
           }
@@ -123,7 +127,6 @@
         function draw(t, a) {
           var ph = t / LOOP_CYCLE;
           ctx.globalAlpha = 1; ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
-          var R0 = Math.min(w, h);
           // 资历序绘制:progress = frac(ph + phi) 升序 → 在屏最久者最后画(最上层);
           // wrap(progress 1→0)发生在色块完全出画时,从顶层掉到底层 → zIndex 切换不可见
           var order = [];
@@ -132,11 +135,12 @@
           for (var si = 0; si < order.length; si++) {
             var i = order[si], b = blobs[i];
             var pgr = (ph + b.phi) % 1;
-            var th = 2 * Math.PI * pgr, nx, ny;
-            if (b.onX) { nx = b.Cx + b.sg * b.Rc * Math.cos(th); ny = b.Cy + 0.9 * b.Rc * Math.sin(th); }
-            else { nx = b.Cx + 0.9 * b.Rc * Math.cos(th); ny = b.Cy + b.sg * b.Rc * Math.sin(th); }
-            var Rt = b.R * (1 + 0.12 * Math.sin(2 * Math.PI * (1 + i % 3) * ph + b.rp));
-            traceBlob(b, nx * w, ny * h, Rt * R0, pgr);
+            var th = 2 * Math.PI * pgr;
+            var dn = 0.5 + b.sg * (b.offA + b.Rt * Math.cos(th));   // 主轴(长边)坐标
+            var un = b.t + 0.8 * b.Rt * Math.sin(th);               // 旁轴坐标
+            var nx = dom ? dn : un, ny = dom ? un : dn;
+            var Rp = b.R * (1 + 0.12 * Math.sin(2 * Math.PI * (1 + i % 3) * ph + b.rp));
+            traceBlob(b, nx * w, ny * h, Rp, ph);
             ctx.globalAlpha = 0.95 * a; ctx.fillStyle = b.color; ctx.fill();
           }
           ctx.globalAlpha = 0.22 * a; ctx.strokeStyle = dark ? "#67e8f9" : "#f9a8d4"; ctx.lineWidth = 1.5;

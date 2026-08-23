@@ -15,7 +15,7 @@ const ACCEPT = {
   "bg-matrix":       { dur: 18, vars: { charset: "katakana", density: 260, scrim: 0.15, dim: 0.1 } },
   "bg-data-stream":  { dur: 18, vars: { charset: "digits", density: 220, color: "#a3e635", scrim: 0.15 } },
   "bg-glitch":       { dur: 12, vars: { text: "SYSTEM BREACH", color: "#f43f5e", scrim: 0.15 } },
-  "bg-aurora":       { dur: 22, vars: { colors: "#0ea5e9,#a855f7,#f97316", density: 7, base: "dark", scrim: 0.25 } },
+  "bg-aurora":       { dur: 42, vars: { colors: "#0ea5e9,#a855f7,#f97316", density: 7, base: "dark", scrim: 0.25 } },
   "bg-bauhaus":      { dur: 26, vars: { colors: "#7c5fc4,#3b6fb5,#ffffff,#e8746b", density: 1.4, base: "light" } },
   "bg-particles":    { dur: 26, vars: { colors: "#f472b6,#facc15", density: 130, link_distance: 140, scrim: 0.2 } },
   "bg-image":        { dur: 15, vars: { move: "pan-right", max_zoom: 1.25, scrim: 0.45, dim: 0.3, scene_dur: 15 } },
