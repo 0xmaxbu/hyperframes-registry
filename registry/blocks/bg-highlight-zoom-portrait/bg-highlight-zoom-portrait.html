@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en"
+  data-composition-variables='[
+    {"id":"src","type":"image","label":"Image","description":"Full-bleed cover image the camera explores (URL or project asset path)","default":"assets/bghz-placeholder.svg","maxLength":300},
+    {"id":"focuses","type":"string","label":"Focuses","description":"Focus points as normalized \"x,y\" pairs separated by \";\" (1-4 points), visited in order; clamped so the zoomed viewport never leaves the image","default":"0.3,0.42;0.7,0.58;0.5,0.35","maxLength":200},
+    {"id":"zoom","type":"number","label":"Zoom","description":"Zoom level at each focus (2-3.5)","default":2.6,"min":2,"max":3.5,"step":0.1},
+    {"id":"push_dur","type":"number","label":"Push duration","description":"Seconds of each push/travel leg (0.8-5)","default":2,"min":0.8,"max":5,"step":0.1},
+    {"id":"dwell","type":"number","label":"Dwell","description":"Rest seconds at each focus before the next hop (1-8)","default":2.5,"min":1,"max":8,"step":0.1},
+    {"id":"drift","type":"number","label":"Drift","description":"Micro-drift during dwell in px/s (0-30), keeps the rest alive","default":5,"min":0,"max":30,"step":1},
+    {"id":"dip","type":"number","label":"Dip","description":"Zoom pull-back during hops (director breathing) (0-1.5)","default":0.6,"min":0,"max":1.5,"step":0.05},
+    {"id":"base_zoom","type":"number","label":"Base zoom","description":"Opening zoom level before the first push (1-1.5)","default":1,"min":1,"max":1.5,"step":0.05},
+    {"id":"scrim","type":"number","label":"Scrim","description":"Black overlay strength for text readability 0-1","default":0.35,"min":0,"max":1,"step":0.05},
+    {"id":"dim","type":"number","label":"Dim","description":"De-bright / de-saturate 0-1","default":0,"min":0,"max":1,"step":0.05},
+    {"id":"bg","type":"color","label":"Background","description":"Base color shown before intro","default":"#000000"},
+    {"id":"intro","type":"number","label":"Intro","description":"Fade-in seconds","default":0.6,"min":0,"max":3,"step":0.1},
+    {"id":"scene_dur","type":"number","label":"Scene duration","description":"Plan to cut around this length; the hop sequence spans it (5-60), then the last focus holds still","default":15,"min":5,"max":60,"step":1}
+  ]'
+>
+  <head>
+    <meta charset="utf-8" />
+    <title>bg-highlight-zoom-portrait</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+      body { background: #000; overflow: hidden; }
+      #bghz-root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #000; }
+      #bghz-bg { position: absolute; inset: 0; z-index: 0; background: #000; }
+      #bghz-wrap { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; opacity: 0; will-change: transform; }
+      #bghz-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+      #bghz-scrim { position: absolute; inset: 0; z-index: 2; background: #000; opacity: 0; pointer-events: none; }
+    </style>
+  </head>
+  <body>
+    <div id="bghz-root"
+      data-composition-id="bg-highlight-zoom-portrait"
+      data-start="0"
+      data-duration="60"
+      data-width="1080"
+      data-height="1920"
+    >
+      <div id="bghz-bg"></div>
+      <div id="bghz-wrap">
+        <img id="bghz-img" data-var-src="src" src="assets/bghz-placeholder.svg" alt="" />
+      </div>
+      <div id="bghz-scrim"></div>
+      <div id="bghz-drv" class="clip" data-start="0" data-duration="60" data-track-index="0"
+        style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none"></div>
+    </div>
+    <script>
+      (function () {
+        "use strict";
+        window.__timelines = window.__timelines || {};
+
+        var DUR = 60;   // manifest 上限;多跳序列按 scene_dur 铺,末焦点停驻静止
+
+        function clamp(v, lo, hi, d) { return v != null ? Math.max(lo, Math.min(hi, Number(v))) : d; }
+
+        var V = {};
+        try { V = (window.__hyperframes && window.__hyperframes.getVariables) ? window.__hyperframes.getVariables() : {}; } catch (e) { V = {}; }
+        var zoom = clamp(V.zoom, 2, 3.5, 2.6);
+        var push = clamp(V.push_dur, 0.8, 5, 2);
+        var dwell = clamp(V.dwell, 1, 8, 2.5);
+        var drift = clamp(V.drift, 0, 30, 5);
+        var dip = clamp(V.dip, 0, 1.5, 0.6);
+        var baseZoom = clamp(V.base_zoom, 1, 1.5, 1);
+        var scrim = clamp(V.scrim, 0, 1, 0.35);
+        var dim = clamp(V.dim, 0, 1, 0);
+        var bg = V.bg || "#000";
+        var introDur = clamp(V.intro, 0, 3, 0.6);
+        var sceneDur = clamp(V.scene_dur, 5, DUR, 15);
+
+        // 焦点清单:归一化 "x,y;x,y" → 画布像素,1-4 个
+        var pts = String(V.focuses || "").split(";").map(function (s) {
+          var p = s.split(",").map(Number);
+          return (p.length === 2 && isFinite(p[0]) && isFinite(p[1])) ? [p[0], p[1]] : null;
+        }).filter(Boolean).map(function (p) {
+          return [clamp(p[0], 0, 1, 0.5), clamp(p[1], 0, 1, 0.5)];
+        });
+        if (!pts.length) pts = [[0.3, 0.42], [0.7, 0.58], [0.5, 0.35]];
+        if (pts.length > 4) pts = pts.slice(0, 4);
+
+        var root = document.getElementById("bghz-root");
+        var bgEl = document.getElementById("bghz-bg");
+        var wrap = document.getElementById("bghz-wrap");
+        var scrimEl = document.getElementById("bghz-scrim");
+        bgEl.style.background = bg;
+        if (dim > 0) wrap.style.filter = "brightness(" + (1 - 0.45 * dim) + ") saturate(" + (1 - 0.6 * dim) + ")";
+
+        var w = root.clientWidth || 1920, h = root.clientHeight || 1080;
+        var M = 8;   // 钳制安全余量:中间帧插值亚像素越界的兜底
+
+        // Z 感知焦点钳制:zoom s 下视口半宽 w/2s 必须完整在图内(不露边规则的 focus 版)
+        function clampF(p, s) {
+          var mx = w / (2 * s) + M, my = h / (2 * s) + M;
+          return [
+            (w - 2 * mx < 0) ? w / 2 : Math.min(Math.max(p[0] * w, mx), w - mx),
+            (h - 2 * my < 0) ? h / 2 : Math.min(Math.max(p[1] * h, my), h - my)
+          ];
+        }
+        // 视口中心在 (px,py)、倍率 s 时的 wrap 变换(origin 0 0):t = center − s·P
+        function tx(px, s) { return w / 2 - s * px; }
+        function ty(py, s) { return h / 2 - s * py; }
+
+        var tl = gsap.timeline({ paused: true });
+        window.__timelines["bg-highlight-zoom-portrait"] = tl;
+
+        var K = pts.length;
+        // 序列铺满 scene_dur:超时比例压缩(单跳 ≥0.6s、停驻 ≥1s 保底);仍超时裁尾焦点
+        for (;;) {
+          var natural = introDur + push + K * dwell + (K - 1) * push;
+          if (natural <= sceneDur || K <= 1) break;
+          var f = (sceneDur - introDur) / (natural - introDur);
+          push = Math.max(0.6, push * f);
+          dwell = Math.max(1, dwell * f);
+          var n2 = introDur + push + K * dwell + (K - 1) * push;
+          if (n2 > sceneDur) { K--; pts = pts.slice(0, K); continue; }
+          break;
+        }
+
+        var f1 = clampF(pts[0], zoom);
+        tl.set(wrap, { transformOrigin: "0px 0px", scale: baseZoom, x: tx(w / 2, baseZoom), y: ty(h / 2, baseZoom) }, 0);
+        tl.to(wrap, { opacity: 1, duration: introDur, ease: "power2.out" }, 0);
+        tl.to(scrimEl, { opacity: scrim, duration: introDur, ease: "power2.out" }, 0);
+
+        var t = Math.min(introDur * 0.5, sceneDur);
+        tl.to(wrap, { scale: zoom, x: tx(f1[0], zoom), y: ty(f1[1], zoom), duration: push, ease: "power2.inOut" }, t);
+        t += push;
+
+        for (var i = 0; i < K; i++) {
+          var fi = i === 0 ? f1 : clampF(pts[i], zoom);
+          // 停驻:沿抵达方向微漂(非死停);末焦点停驻吃掉 scene_dur 富余后完全静止
+          var prev = i === 0 ? [w / 2, h / 2] : clampF(pts[i - 1], zoom);
+          var dx = fi[0] - prev[0], dy = fi[1] - prev[1], len = Math.max(1e-6, Math.sqrt(dx * dx + dy * dy));
+          var isLast = i === K - 1;
+          var dDur = isLast ? Math.max(0.1, sceneDur - t) : dwell;
+          if (drift > 0 && dDur > 0.2) {
+            var end = clampF([fi[0] / w + (dx / len) * drift * dDur / w, fi[1] / h + (dy / len) * drift * dDur / h], zoom);
+            tl.to(wrap, { x: tx(end[0], zoom), y: ty(end[1], zoom), duration: dDur, ease: "none" }, t);
+          } else {
+            tl.set({}, {}, t + 0.01);
+          }
+          t += dDur;
+          if (!isLast) {
+            // 跳间:先回落再推(导演呼吸感)——去程 dip 入、回程 dip 出,全程连续无跳变
+            var fn = clampF(pts[i + 1], zoom);
+            var zs = Math.max(1.05, zoom - dip);
+            var mid = clampF([(fi[0] + fn[0]) / 2, (fi[1] + fn[1]) / 2], zs);
+            tl.to(wrap, { scale: zs, x: tx(mid[0], zs), y: ty(mid[1], zs), duration: push / 2, ease: "power1.in" }, t);
+            tl.to(wrap, { scale: zoom, x: tx(fn[0], zoom), y: ty(fn[1], zoom), duration: push / 2, ease: "power1.out" }, t + push / 2);
+            t += push;
+          }
+        }
+        if (tl.duration() < DUR) tl.set({}, {}, DUR);              // 末焦点静止铺满上限,宿主任意裁剪
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://hyperframes.heygen.com/schema/registry-item.json",
+  "name": "bg-highlight-zoom",
+  "type": "hyperframes:block",
+  "title": "Highlight-Zoom Background — multi-hop focus pushes with dwell",
+  "description": "One-shot background: the camera pushes into a sequence of focus points on a full-bleed photo — eased push, dwelling with a micro-drift, then dipping the zoom back slightly before the next hop (director reframing rhythm, no hard cuts). Focus points are clamped zoom-aware so the viewport never leaves the image. Hops span scene_dur, then the last focus holds still. Landscape 16:9 twin of bg-highlight-zoom-portrait.",
+  "tags": ["background", "zoom", "focus", "push-in", "photo", "one-shot", "landscape"],
+  "dimensions": { "width": 1920, "height": 1080 },
+  "duration": 60,
+  "variables": [
+    { "id": "src", "type": "image", "role": "content", "label": "Image", "description": "Full-bleed cover image the camera explores (URL or project asset path)", "default": "assets/bghz-placeholder.svg" },
+    { "id": "focuses", "type": "string", "role": "content", "label": "Focuses", "description": "Focus points as normalized \"x,y\" pairs separated by \";\" (1-4 points), visited in order; clamped so the zoomed viewport never leaves the image", "default": "0.3,0.42;0.7,0.58;0.5,0.35", "maxLength": 200 },
+    { "id": "zoom", "type": "number", "role": "style", "label": "Zoom", "description": "Zoom level at each focus (2-3.5)", "default": 2.6, "min": 2, "max": 3.5, "step": 0.1 },
+    { "id": "push_dur", "type": "number", "role": "style", "label": "Push duration", "description": "Seconds of each push/travel leg (0.8-5)", "default": 2, "min": 0.8, "max": 5, "step": 0.1 },
+    { "id": "dwell", "type": "number", "role": "style", "label": "Dwell", "description": "Rest seconds at each focus before the next hop (1-8)", "default": 2.5, "min": 1, "max": 8, "step": 0.1 },
+    { "id": "drift", "type": "number", "role": "style", "label": "Drift", "description": "Micro-drift during dwell in px/s (0-30), keeps the rest alive", "default": 5, "min": 0, "max": 30, "step": 1 },
+    { "id": "dip", "type": "number", "role": "style", "label": "Dip", "description": "Zoom pull-back during hops (director breathing) (0-1.5)", "default": 0.6, "min": 0, "max": 1.5, "step": 0.05 },
+    { "id": "base_zoom", "type": "number", "role": "style", "label": "Base zoom", "description": "Opening zoom level before the first push (1-1.5)", "default": 1, "min": 1, "max": 1.5, "step": 0.05 },
+    { "id": "scrim", "type": "number", "role": "style", "label": "Scrim", "description": "Black overlay strength for text readability 0-1", "default": 0.35, "min": 0, "max": 1, "step": 0.05 },
+    { "id": "dim", "type": "number", "role": "style", "label": "Dim", "description": "De-bright / de-saturate 0-1", "default": 0, "min": 0, "max": 1, "step": 0.05 },
+    { "id": "bg", "type": "color", "role": "style", "label": "Background", "description": "Base color shown before intro", "default": "#000000" },
+    { "id": "intro", "type": "number", "role": "style", "label": "Intro", "description": "Fade-in seconds", "default": 0.6, "min": 0, "max": 3, "step": 0.1 },
+    { "id": "scene_dur", "type": "number", "role": "style", "label": "Scene duration", "description": "Plan to cut around this length; the hop sequence spans it (5-60), then the last focus holds still", "default": 15, "min": 5, "max": 60, "step": 1 }
+  ],
+  "files": [
+    { "path": "bg-highlight-zoom.html", "target": "compositions/bg-highlight-zoom.html", "type": "hyperframes:composition" },
+    { "path": "assets/bghz-placeholder.svg", "target": "assets/bghz-placeholder.svg", "type": "hyperframes:asset" }
+  ]
+}

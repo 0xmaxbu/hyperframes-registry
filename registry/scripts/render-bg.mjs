@@ -23,6 +23,7 @@ const ACCEPT = {
   "bg-card-dance":   { dur: 18, vars: { wave_amp: 0.7, wave_speed: 1.5, gap: 3, angle: "0", scrim: 0.3 } },
   "bg-sliding-stripes": { dur: 16, vars: { stripes: 18, speed: 2, max_shift: 200, scrim: 0.3 } },
   "bg-kaleidoscope":  { dur: 18, vars: { segments: 10, speed: 1, breathe: 0.8, center_scale: 1.15, scrim: 0.3 } },
+  "bg-highlight-zoom": { dur: 15, vars: { focuses: "0.25,0.35;0.75,0.6;0.5,0.8", zoom: 3.0, dip: 0.8, drift: 8, scrim: 0.4, scene_dur: 15 } },
 };
 for (const k of Object.keys(ACCEPT)) ACCEPT[k + "-portrait"] = ACCEPT[k];
 
