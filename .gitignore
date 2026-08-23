@@ -1,0 +1,14 @@
+# 渲染产物 / 临时文件(范围限定:vendored registry 内的媒体资源必须入库,勿用全局 *.png 等)
+examples/*/renders/
+examples/*/compositions/
+demos/*.mp4
+demos/*.gif
+demos/compositions/
+*.log
+
+# node
+node_modules/
+
+# 本地临时(不走 git)
+.hf/
+.DS_Store

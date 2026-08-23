@@ -1,0 +1,20 @@
+{
+  "$schema": "https://hyperframes.heygen.com/schema/registry-item.json",
+  "name": "preset-sequence-layers",
+  "type": "hyperframes:block",
+  "title": "Sequence Layers — stacked card reveal, one layer at a time",
+  "description": "N large containers share one anchor region; each new layer flips over the previous one (rotateY flip cover with evenly spaced edge reveal) for step-by-step causal storytelling. Data-driven: inject items[].title to build layers.",
+  "tags": ["card", "sequence", "causal-chain", "data-driven", "landscape"],
+  "dimensions": {
+    "width": 1920,
+    "height": 1080
+  },
+  "duration": 12,
+  "files": [
+    {
+      "path": "preset-sequence-layers.html",
+      "target": "compositions/preset-sequence-layers.html",
+      "type": "hyperframes:composition"
+    }
+  ]
+}

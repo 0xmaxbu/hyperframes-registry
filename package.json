@@ -1,0 +1,19 @@
+{
+  "name": "hyperframes-registry",
+  "version": "0.1.0",
+  "private": true,
+  "description": "自制 HyperFrames 超集 registry(官方目录 + 我们的背景块),详见 issue #1 与 docs/adr/",
+  "type": "module",
+  "scripts": {
+    "vendor:official": "node registry/scripts/vendor-official-registry.mjs",
+    "sync:portrait": "node registry/scripts/sync-portrait.mjs",
+    "gen:registry": "node registry/scripts/generate-registry-items.mjs",
+    "check:landscape": "cd examples/landscape && npx hyperframes check",
+    "check:portrait": "cd examples/portrait && npx hyperframes check",
+    "render:landscape": "cd examples/landscape && npx hyperframes render -o renders/sequence-layers-landscape.mp4",
+    "render:portrait": "cd examples/portrait && npx hyperframes render -o renders/sequence-layers-portrait.mp4"
+  },
+  "dependencies": {
+    "hyperframes": "^0.8.8"
+  }
+}

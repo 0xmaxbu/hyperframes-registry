@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>preset-sequence-layers — landscape 16:9 宿主</title>
+  </head>
+  <body>
+    <!-- 16:9 宿主：挂 preset-sequence-layers，注入真实场景数据（因果链 5 环）+ 覆盖 accent 色 -->
+    <div
+      id="stage"
+      data-hf-root
+      data-composition-id="example-landscape"
+      data-start="0"
+      data-duration="12"
+      data-width="1920"
+      data-height="1080"
+    >
+      <div
+        id="seq-layers"
+        data-composition-id="preset-sequence-layers"
+        data-composition-src="compositions/preset-sequence-layers.html"
+        data-start="0"
+        data-duration="12"
+        data-track-index="0"
+        data-width="1920"
+        data-height="1080"
+        data-variable-values='{
+          "items": [
+            { "title": "利息高" },
+            { "title": "赤字大" },
+            { "title": "发债多" },
+            { "title": "溢价高" },
+            { "title": "利息更高" }
+          ],
+          "config": { "interval": 1.4, "duration": 0.8 },
+          "accent": "#f472b6"
+        }'
+      ></div>
+      <div
+        id="drv"
+        class="clip"
+        data-start="0"
+        data-duration="12"
+        data-track-index="10"
+        style="position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none"
+      ></div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script>
+      (function () {
+        "use strict";
+        window.__timelines = window.__timelines || {};
+        // 宿主自己的 timeline（空；转场由宿主自行编排）
+        window.__timelines["example-landscape"] = gsap.timeline({ paused: true });
+      })();
+    </script>
+  </body>
+</html>

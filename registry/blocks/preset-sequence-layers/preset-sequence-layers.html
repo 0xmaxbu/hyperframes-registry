@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>preset-sequence-layers</title>
+  </head>
+  <body>
+    <template>
+      <!--
+        preset-sequence-layers —— 逐层翻开卡片（图层叠盖）
+        N 个大容器共享同一锚区，新层从旧层后面翻开盖上去（rotateY 90→0 绕左缘枢轴 + 归位），
+        等差露边偏移（dx=i*14, dy=i*10），后层压前层（z 递增），容器依次展示、逐层递进叙事。
+        数据驱动：items[].title 建层；config.interval / config.duration 控制节奏。
+        尺寸自适应：JS 读根 data-width/data-height，if(width>height) 分支排布（landscape / portrait）。
+        配色：--accent / --ink / --surface / --bg，宿主 data-variable-values 可覆盖。
+        ⚠ 竖屏孪生文件由 scripts/sync-portrait.mjs 从本文件生成（仅换 composition-id + 尺寸），
+           改动本文件后运行 npm run sync:portrait 同步，勿手改竖屏副本。
+      -->
+      <div
+        id="psl-root"
+        data-composition-id="preset-sequence-layers"
+        data-start="0"
+        data-duration="12"
+        data-width="1920"
+        data-height="1080"
+        data-composition-variables='[
+          {"id":"items","type":"json","label":"Layers","default":[{"title":"第一层：背景"},{"title":"第二层：证据"},{"title":"第三层：结论"}]},
+          {"id":"config","type":"json","label":"Config","default":{"interval":0.35,"duration":0.5}},
+          {"id":"accent","type":"color","label":"Accent","default":"#5eead4"},
+          {"id":"ink","type":"color","label":"Ink","default":"#f1f5f9"},
+          {"id":"surface","type":"color","label":"Surface","default":"#16233a"},
+          {"id":"bg","type":"color","label":"Background","default":"#0b1220"}
+        ]'
+      >
+        <style>
+          /* OS 系统字体：renderer 无法自动供应，用 src:local() 声明即满足 lint（无需字体文件） */
+          @font-face {
+            font-family: "PingFang SC";
+            src: local("PingFang SC");
+          }
+          @font-face {
+            font-family: "Noto Sans CJK SC";
+            src: local("Noto Sans CJK SC");
+          }
+
+          #psl-root,
+          #psl-root * {
+            box-sizing: border-box;
+          }
+
+          #psl-root {
+            position: relative;
+            width: 1920px;
+            height: 1080px;
+            overflow: hidden;
+            isolation: isolate;
+            background: var(--bg, #0b1220);
+            color: var(--ink, #f1f5f9);
+            font-family: -apple-system, "PingFang SC", "Helvetica Neue", "Segoe UI", "Noto Sans CJK SC", sans-serif;
+            --psl-accent: var(--accent, #5eead4);
+            --psl-ink: var(--ink, #f1f5f9);
+            --psl-surface: var(--surface, #16233a);
+          }
+
+          /* 锚区：所有层共享的容器区 */
+          #psl-stack {
+            position: absolute;
+            top: 22%;
+            left: 15%;
+            width: 70%;
+            height: 56%;
+            perspective: 1600px;
+          }
+
+          .psl-layer {
+            position: absolute;
+            inset: 0;
+            border-radius: 28px;
+            background:
+              linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.08)),
+              var(--psl-surface);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.38);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6% 8%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+          }
+
+          /* 左缘 accent 条：新层翻开时的引导色（翻盖绕左缘枢轴） */
+          .psl-layer::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 12px;
+            background: linear-gradient(180deg, var(--psl-accent), color-mix(in srgb, var(--psl-accent) 55%, transparent));
+          }
+
+          /* 层序号角标（右上） */
+          .psl-badge {
+            position: absolute;
+            top: 22px;
+            right: 26px;
+            padding: 6px 16px;
+            border-radius: 999px;
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            color: var(--psl-accent);
+            border: 1.5px solid color-mix(in srgb, var(--psl-accent) 45%, transparent);
+          }
+
+          .psl-title {
+            font-size: 76px;
+            font-weight: 800;
+            line-height: 1.22;
+            letter-spacing: -0.015em;
+            color: var(--psl-ink);
+            text-align: center;
+            overflow-wrap: anywhere;
+            max-width: 88%;
+          }
+
+          /* 竖屏排布：窄锚区 + 更小的字 */
+          #psl-root.psl-portrait #psl-stack {
+            top: 30%;
+            left: 8%;
+            width: 84%;
+            height: 40%;
+          }
+
+          #psl-root.psl-portrait .psl-layer {
+            border-radius: 22px;
+          }
+
+          #psl-root.psl-portrait .psl-title {
+            font-size: 56px;
+          }
+
+          #psl-root.psl-portrait .psl-badge {
+            top: 16px;
+            right: 18px;
+            font-size: 18px;
+          }
+
+          #psl-driver {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+          }
+        </style>
+
+        <div id="psl-stack"></div>
+        <div
+          id="psl-driver"
+          class="clip"
+          data-start="0"
+          data-duration="12"
+          data-track-index="0"
+        ></div>
+      </div>
+
+      <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+        <script>
+          (function () {
+            "use strict";
+            window.__timelines = window.__timelines || {};
+            var root = document.getElementById("psl-root");
+            var stack = document.getElementById("psl-stack");
+            // 防御：编译器内联后根 div 的 data-composition-id 由宿主承担（本根被剥离），
+            // runtime 未就绪时 __hyperframes 也可能缺席 —— 两者都兜底，不阻塞建层/注册
+            var v = (window.__hyperframes && typeof window.__hyperframes.getVariables === "function")
+              ? window.__hyperframes.getVariables()
+              : {};
+            var items = (v.items && Array.isArray(v.items) && v.items.length)
+              ? v.items
+              : [{ title: "第一层：背景" }, { title: "第二层：证据" }, { title: "第三层：结论" }];
+            var cfg = (v.config && typeof v.config === "object") ? v.config : {};
+            var W = Number(root.dataset.width);
+            var H = Number(root.dataset.height);
+            var portrait = H > W;
+            var duration = Number(root.dataset.duration || 12);
+            var interval = typeof cfg.interval === "number" ? cfg.interval : 0.35;
+            var enterDur = typeof cfg.duration === "number" ? cfg.duration : 0.5;
+
+            root.classList.add(portrait ? "psl-portrait" : "psl-landscape");
+
+            var layers = [];
+            items.forEach(function (item, i) {
+              var layer = document.createElement("div");
+              layer.id = "psl-layer-" + i;
+              layer.className = "psl-layer";
+              // 层叠设计本意：后层翻开盖前层（重叠 + 遮挡是特性非缺陷）——标记放行 layout 检查器
+              layer.setAttribute("data-layout-allow-overlap", "");
+              layer.setAttribute("data-layout-allow-occlusion", "");
+
+              var badge = document.createElement("div");
+              badge.className = "psl-badge";
+              badge.textContent = (i + 1) + " / " + items.length;
+              layer.appendChild(badge);
+
+              var title = document.createElement("div");
+              title.className = "psl-title";
+              title.textContent = (item && (item.title || item.text)) || ("层 " + (i + 1));
+              layer.appendChild(title);
+
+              stack.appendChild(layer);
+              layers.push(layer);
+            });
+
+            var start = 0.25;
+            // 等差露边：新层比旧层右/下偏一点（露旧层边沿，形成"层层叠"），末层完整。
+            // 对齐既有管线：stepX = w*0.08, stepY = h*0.07（按容器尺寸比例，非固定 px）
+            var stackW = stack.offsetWidth || 1;
+            var stackH = stack.offsetHeight || 1;
+            var tl = gsap.timeline({ paused: true });
+            layers.forEach(function (layer, i) {
+              var dx = Math.round(i * stackW * 0.08);
+              var dy = Math.round(i * stackH * 0.07);
+              var at = start + i * interval;
+              if (i === 0) {
+                // 首层：直接揭示（对齐既有管线，纯 opacity）
+                gsap.set(layer, { zIndex: 0, x: dx, y: dy, opacity: 0 });
+                tl.to(layer, { opacity: 1, duration: enterDur * 0.7, ease: "power1.out" }, at);
+              } else {
+                // 后层：从旧层后侧翻开盖上去 —— 初始 edge-on（rotateY 90, 右缘在旧层后面），
+                // 翻开转平 + 归位滑入露边位（对齐既有管线：滑入 x + rotationY 90→0 + opacity）
+                gsap.set(layer, {
+                  zIndex: i,
+                  x: dx + stackW,        // 右缘在旧层后面（edge-on 藏于旧层后）
+                  y: dy,
+                  rotationY: 90,
+                  opacity: 0,
+                  transformOrigin: "left center",
+                  transformPerspective: 1200,
+                });
+                tl.to(
+                  layer,
+                  { x: dx, rotationY: 0, opacity: 1, duration: enterDur, ease: "power2.inOut" },
+                  at,
+                );
+              }
+            });
+
+            // 字面量注册（thread-message-stack 先例）：编译器内联 sub-comp 后根 div 的
+            // data-composition-id 被剥离（身份由宿主承担），动态读 dataset.compositionId 会得 undefined
+            window.__timelines["preset-sequence-layers"] = tl;
+          })();
+        </script>
+    </template>
+  </body>
+</html>
