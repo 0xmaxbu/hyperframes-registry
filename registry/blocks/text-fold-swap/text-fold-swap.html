@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en"
+  data-composition-variables='[
+    {"id":"text_a","type":"string","label":"Phrase A","description":"Opening phrase; *word* = emphasized (accent color)","default":"从 *流量* 思维","maxLength":120},
+    {"id":"text_b","type":"string","label":"Phrase B","description":"Closing phrase the swap lands on; *word* = emphasized","default":"到 *留量* 思维","maxLength":120},
+    {"id":"hold","type":"number","label":"Hold","description":"Seconds phrase A stays before folding (0.5-5)","default":1.6,"min":0.5,"max":5,"step":0.1},
+    {"id":"fold_dur","type":"number","label":"Fold duration","description":"Seconds of each fold/unfold (0.3-1.5)","default":0.7,"min":0.3,"max":1.5,"step":0.05},
+    {"id":"font_size","type":"number","label":"Font size","description":"Font size in px (28-180)","default":92,"min":28,"max":180,"step":2},
+    {"id":"color","type":"color","label":"Ink","description":"Text color","default":"#f1f5f9"},
+    {"id":"accent","type":"color","label":"Accent","description":"Emphasized (*marked*) word color","default":"#34d399"},
+    {"id":"intro","type":"number","label":"Delay","description":"Seconds before phrase A appears (0-2)","default":0.2,"min":0,"max":2,"step":0.1}
+  ]'
+>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&display=swap" rel="stylesheet" />
+    <title>text-fold-swap</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+      body { background: transparent; overflow: hidden; }
+      #tfs-root { position: relative; width: 1920px; height: 1080px; overflow: hidden; }
+      #tfs-box { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 8%; }
+      #tfs-a, #tfs-b { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-weight: 800; white-space: nowrap;
+        font-family: "Noto Sans SC", sans-serif; }
+      .tfs-c { display: inline-block; will-change: transform, opacity; }
+    </style>
+  </head>
+  <body>
+    <div id="tfs-root"
+      data-composition-id="text-fold-swap"
+      data-start="0"
+      data-duration="60"
+      data-width="1920"
+      data-height="1080"
+    >
+      <div id="tfs-box"><span id="tfs-a"></span><span id="tfs-b"></span></div>
+      <div id="tfs-drv" class="clip" data-start="0" data-duration="60" data-track-index="0"
+        style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none"></div>
+    </div>
+    <script>
+      (function () {
+        "use strict";
+        window.__timelines = window.__timelines || {};
+
+        var DUR = 60;
+        function clamp(v, lo, hi, d) { return v != null ? Math.max(lo, Math.min(hi, Number(v))) : d; }
+
+        var V = {};
+        try { V = (window.__hyperframes && window.__hyperframes.getVariables) ? window.__hyperframes.getVariables() : {}; } catch (e) { V = {}; }
+        var hold = clamp(V.hold, 0.5, 5, 1.6);
+        var foldDur = clamp(V.fold_dur, 0.3, 1.5, 0.7);
+        var fontSize = clamp(V.font_size, 28, 180, 92);
+        var ink = V.color || "#f1f5f9";
+        var accent = V.accent || "#34d399";
+        var delay0 = clamp(V.intro, 0, 2, 0.2);
+
+        var elA = document.getElementById("tfs-a");
+        var elB = document.getElementById("tfs-b");
+
+        // 逐字 span(*强调* 标记的字染 accent);折叠 = 每字 transform 横移向中(无布局属性动画)
+        function chars(el, str) {
+          var out = [], re = /\*([^*]+)\*/g, last = 0, m;
+          function pushCh(ch, emph) {
+            var c = document.createElement("span");
+            c.className = "tfs-c";
+            c.textContent = ch;
+            if (emph) c.style.color = accent;
+            el.appendChild(c);
+            out.push(c);
+          }
+          function pushStr(s, emph) { Array.from(s).forEach(function (ch) { pushCh(ch, emph); }); }
+          while ((m = re.exec(str))) {
+            if (m.index > last) pushStr(str.slice(last, m.index), false);
+            pushStr(m[1], true);
+            last = m.index + m[0].length;
+          }
+          if (last < str.length) pushStr(str.slice(last), false);
+          return out;
+        }
+        var ca = chars(elA, String(V.text_a == null ? "从 *流量* 思维" : V.text_a));
+        var cb = chars(elB, String(V.text_b == null ? "到 *留量* 思维" : V.text_b));
+        elA.style.fontSize = fontSize + "px";
+        elB.style.fontSize = fontSize + "px";
+        elA.style.color = ink;
+        elB.style.color = ink;
+
+        // 折叠偏移:第 i 字向中收缩 (i − mid)·tight px(负向外正内向,重叠成密团)
+        var TIGHT = fontSize * 0.62;
+        function foldX(i, n) { return -((i - (n - 1) / 2) * TIGHT); }
+        // 展开态偏移:比自然排版略疏(translate 层面叠加,不触布局)
+        var WIDEPX = fontSize * 0.06;
+        function wideX(i, n) { return (i - (n - 1) / 2) * WIDEPX; }
+
+        var tl = gsap.timeline({ paused: true });
+        window.__timelines["text-fold-swap"] = tl;
+
+        // A:字从折叠密团展开入场 → 驻留 → 收拢回密团淡出
+        ca.forEach(function (c, i) {
+          tl.fromTo(c,
+            { x: foldX(i, ca.length), opacity: 0 },
+            { x: wideX(i, ca.length), opacity: 1, duration: 0.5, ease: "back.out(1.6)" }, delay0);
+          tl.to(c, { x: foldX(i, ca.length), duration: foldDur, ease: "power2.inOut" }, delay0 + 0.5 + hold);
+          tl.to(c, { opacity: 0, duration: foldDur * 0.6, ease: "power1.in" }, delay0 + 0.5 + hold + foldDur * 0.3);
+        });
+        // B:接在 A 收拢的密团上,同位展开落定
+        var tB = delay0 + 0.5 + hold + foldDur * 0.5;
+        cb.forEach(function (c, i) {
+          tl.fromTo(c,
+            { x: foldX(i, cb.length), opacity: 0, scale: 0.94 },
+            { x: wideX(i, cb.length), opacity: 1, scale: 1, duration: foldDur, ease: "back.out(1.5)" }, tB);
+        });
+        if (tl.duration() < DUR) tl.set({}, {}, DUR);                // B 驻留铺满,宿主任意裁剪
+      })();
+    </script>
+  </body>
+</html>

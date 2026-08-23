@@ -1,0 +1,109 @@
+{
+  "$schema": "https://hyperframes.heygen.com/schema/registry-item.json",
+  "name": "text-center-burst",
+  "type": "hyperframes:block",
+  "title": "Center Burst — words explode from center and settle",
+  "description": "Content block: CJK-segmented words burst outward from the canvas center in flight colors, then converge into a neat centered title with a back.out settle. *word* markers land in the accent color. One-shot.",
+  "tags": [
+    "text",
+    "typography",
+    "cjk",
+    "burst",
+    "impact",
+    "landscape"
+  ],
+  "dimensions": {
+    "width": 1920,
+    "height": 1080
+  },
+  "duration": 60,
+  "variables": [
+    {
+      "id": "text",
+      "type": "string",
+      "role": "content",
+      "label": "Text",
+      "description": "Text; \\n = line break; *word* = emphasized (accent color)",
+      "default": "数据驱动 *决策*",
+      "maxLength": 400
+    },
+    {
+      "id": "scatter",
+      "type": "number",
+      "role": "style",
+      "label": "Scatter",
+      "description": "Burst scatter radius in px (80-600)",
+      "default": 280,
+      "min": 80,
+      "max": 600,
+      "step": 20
+    },
+    {
+      "id": "interval",
+      "type": "number",
+      "role": "style",
+      "label": "Interval",
+      "description": "Stagger between units in seconds (0.02-0.3)",
+      "default": 0.06,
+      "min": 0.02,
+      "max": 0.3,
+      "step": 0.01
+    },
+    {
+      "id": "duration",
+      "type": "number",
+      "role": "style",
+      "label": "Duration",
+      "description": "Convergence seconds per unit (0.4-1.4)",
+      "default": 0.7,
+      "min": 0.4,
+      "max": 1.4,
+      "step": 0.05
+    },
+    {
+      "id": "font_size",
+      "type": "number",
+      "role": "style",
+      "label": "Font size",
+      "description": "Font size in px (24-220)",
+      "default": 96,
+      "min": 24,
+      "max": 220,
+      "step": 2
+    },
+    {
+      "id": "color",
+      "type": "color",
+      "role": "style",
+      "label": "Ink",
+      "description": "Final text color",
+      "default": "#f1f5f9"
+    },
+    {
+      "id": "accent",
+      "type": "color",
+      "role": "style",
+      "label": "Accent",
+      "description": "Emphasized (*marked*) unit color",
+      "default": "#f472b6"
+    },
+    {
+      "id": "intro",
+      "type": "number",
+      "role": "style",
+      "label": "Delay",
+      "description": "Seconds before the burst starts (0-2)",
+      "default": 0.2,
+      "min": 0,
+      "max": 2,
+      "step": 0.1
+    }
+  ],
+  "files": [
+    {
+      "path": "text-center-burst.html",
+      "target": "compositions/text-center-burst.html",
+      "type": "hyperframes:composition"
+    }
+  ]
+}

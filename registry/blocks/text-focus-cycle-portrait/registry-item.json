@@ -1,0 +1,98 @@
+{
+  "$schema": "https://hyperframes.heygen.com/schema/registry-item.json",
+  "name": "text-focus-cycle-portrait",
+  "type": "hyperframes:block",
+  "title": "Focus Cycle — rack-focus word rotation (loop) (portrait 9:16)",
+  "description": "Content block (seamless loop): words sit in a row; focus racks from word to word — the focused word sharpens, scales up and glows while the rest blur back. Loop = step × word count, cut anywhere. CJK words separated by spaces.",
+  "tags": [
+    "text",
+    "typography",
+    "cjk",
+    "focus",
+    "loop",
+    "portrait"
+  ],
+  "dimensions": {
+    "width": 1080,
+    "height": 1920
+  },
+  "duration": 60,
+  "variables": [
+    {
+      "id": "text",
+      "type": "string",
+      "role": "content",
+      "label": "Words",
+      "description": "Words to cycle focus between, separated by spaces or \\n",
+      "default": "成本 效率 规模 网络 飞轮",
+      "maxLength": 200
+    },
+    {
+      "id": "step",
+      "type": "number",
+      "role": "style",
+      "label": "Step",
+      "description": "Seconds the focus rests on each word (0.6-3); loop = step × word count",
+      "default": 1.2,
+      "min": 0.6,
+      "max": 3,
+      "step": 0.1
+    },
+    {
+      "id": "font_size",
+      "type": "number",
+      "role": "style",
+      "label": "Font size",
+      "description": "Font size in px (28-160)",
+      "default": 88,
+      "min": 28,
+      "max": 160,
+      "step": 2
+    },
+    {
+      "id": "blur",
+      "type": "number",
+      "role": "style",
+      "label": "Blur",
+      "description": "Out-of-focus blur in px (2-12)",
+      "default": 6,
+      "min": 2,
+      "max": 12,
+      "step": 0.5
+    },
+    {
+      "id": "color",
+      "type": "color",
+      "role": "style",
+      "label": "Ink",
+      "description": "Out-of-focus word color",
+      "default": "#64748b"
+    },
+    {
+      "id": "accent",
+      "type": "color",
+      "role": "style",
+      "label": "Accent",
+      "description": "Focused word color",
+      "default": "#fbbf24"
+    },
+    {
+      "id": "intro",
+      "type": "number",
+      "role": "style",
+      "label": "Delay",
+      "description": "Fade-in seconds before cycling starts (0-2)",
+      "default": 0.4,
+      "min": 0,
+      "max": 2,
+      "step": 0.1
+    }
+  ],
+  "files": [
+    {
+      "path": "text-focus-cycle-portrait.html",
+      "target": "compositions/text-focus-cycle-portrait.html",
+      "type": "hyperframes:composition"
+    }
+  ]
+}

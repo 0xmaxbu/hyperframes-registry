@@ -16,7 +16,7 @@ const blocksRoot = join(here, "..", "blocks");
 
 const only = new Set(process.argv.slice(2));
 
-function isOurs(name) { return name.startsWith("bg-") || name.startsWith("preset-"); }
+function isOurs(name) { return name.startsWith("bg-") || name.startsWith("preset-") || name.startsWith("text-"); }
 
 let names;
 try { names = readdirSync(blocksRoot, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name).sort(); }

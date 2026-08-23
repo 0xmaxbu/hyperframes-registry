@@ -24,6 +24,12 @@ const ACCEPT = {
   "bg-sliding-stripes": { dur: 16, vars: { stripes: 18, speed: 2, max_shift: 200, scrim: 0.3 } },
   "bg-kaleidoscope":  { dur: 18, vars: { segments: 10, speed: 1, breathe: 0.8, center_scale: 1.15, scrim: 0.3 } },
   "bg-highlight-zoom": { dur: 15, vars: { focuses: "0.25,0.35;0.75,0.6;0.5,0.8", zoom: 3.0, dip: 0.8, drift: 8, scrim: 0.4, scene_dur: 15 } },
+  "text-word-stagger": { dur: 8, vars: { text: "用户增长的本质是 *复购率*", unit: "word", direction: "up", accent: "#f472b6", font_size: 92 } },
+  "text-center-burst": { dur: 8, vars: { text: "效率提升 *三倍*", scatter: 360, accent: "#fbbf24", font_size: 110 } },
+  "text-word-echo":   { dur: 8, vars: { text: "第二曲线", echoes: 5, spread: 26, accent: "#f97316", font_size: 150 } },
+  "text-bar-escort":  { dur: 8, vars: { text: "智能驾驶元年\\n*激光雷达* 降本 70%", accent: "#38bdf8", font_size: 76 } },
+  "text-focus-cycle": { dur: 14, vars: { accent: "#34d399", font_size: 96 } },
+  "text-fold-swap":   { dur: 9, vars: { text_a: "人口红利见顶", text_b: "*人才红利* 接棒", accent: "#f472b6", font_size: 96 } },
 };
 for (const k of Object.keys(ACCEPT)) ACCEPT[k + "-portrait"] = ACCEPT[k];
 

@@ -16,6 +16,10 @@ _Avoid_: 前景 preset
 以素材(image)本身为画面主体的编排手法,分两支:多素材空间编排(page-turn)与单素材切分重组(card-dance、sliding-stripes、kaleidoscope、highlight-zoom)。与算法生成图案类背景(bg-matrix/bg-particles 等)的分界即在于画面主体是否为素材本体。全部以背景块形态交付;当前整体处于 needs-optimization(未入 registry 索引)。原计划的 9 种 expand.mjs 移植(drop-stack 等)已取消,不再属于本域。
 _Avoid_: 素材类、堆叠 preset、"2-3 张卡片编排"(覆盖不了单图切分一支)
 
+**文字编排块 (text block)**:
+`text-` 前缀的内容块(前景,无 scrim/dim):CJK 优先的文字动效家族。分词主轴 = `Intl.Segmenter` 真分词(中文按词、英文按词、数字整组),可切字级;官方 72 条文字家族只有 word(空格)/char 二选一,中文逐词全失效——这是本族的存在理由。强调词用内联 `*强调*` 标记。
+_Avoid_: 把它当背景块、用空格分词
+
 **叙事规则 (narrative rule)**:
 没有视觉形态的编排知识(Murch 剪辑律动、Progressive Disclosure、Narrative Genres)。不属于 registry,将来写进视频工作流的 SKILL 引导。
 _Avoid_: 称其为手法或 preset

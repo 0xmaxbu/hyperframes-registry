@@ -15,7 +15,7 @@ export const repoRoot = join(registryRoot, "..");
 
 // 我们的条目前缀(vendored 官方条目不进我们的验证链)
 export function isOurs(name) {
-  return name.startsWith("bg-") || name.startsWith("preset-");
+  return name.startsWith("bg-") || name.startsWith("preset-") || name.startsWith("text-");
 }
 
 export function listOurItems() {

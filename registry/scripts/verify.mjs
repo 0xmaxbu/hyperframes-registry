@@ -28,6 +28,12 @@ const LOOP_CYCLE = {
   "bg-sliding-stripes": 10, "bg-sliding-stripes-portrait": 10,
   "bg-kaleidoscope": 12, "bg-kaleidoscope-portrait": 12,
   "bg-highlight-zoom": 0, "bg-highlight-zoom-portrait": 0,
+  "text-word-stagger": 0, "text-word-stagger-portrait": 0,
+  "text-center-burst": 0, "text-center-burst-portrait": 0,
+  "text-word-echo": 0, "text-word-echo-portrait": 0,
+  "text-bar-escort": 0, "text-bar-escort-portrait": 0,
+  "text-focus-cycle": 6, "text-focus-cycle-portrait": 6,
+  "text-fold-swap": 0, "text-fold-swap-portrait": 0,
 };
 
 // ---- 极简 PNG 统计解码(8-bit, color type 2/6, 非交错):返回 {max, meanLuma, brightRatio} ----

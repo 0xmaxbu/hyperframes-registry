@@ -1,0 +1,146 @@
+{
+  "$schema": "https://hyperframes.heygen.com/schema/registry-item.json",
+  "name": "text-word-stagger",
+  "type": "hyperframes:block",
+  "title": "Word Stagger — CJK-segmented kinetic entrance",
+  "description": "Content block: text enters unit-by-unit with a staggered rise/drop/slide/scale. Units are real CJK words (Intl.Segmenter; Chinese segmented by word, English by word, digits grouped) or characters — not the space-split words official text blocks use. *word* inline markers tint units with the accent color. One-shot, holds after the entrance.",
+  "tags": [
+    "text",
+    "typography",
+    "cjk",
+    "stagger",
+    "reveal",
+    "landscape"
+  ],
+  "dimensions": {
+    "width": 1920,
+    "height": 1080
+  },
+  "duration": 60,
+  "variables": [
+    {
+      "id": "text",
+      "type": "string",
+      "role": "content",
+      "label": "Text",
+      "description": "Text; \\n = line break; *word* = emphasized (accent color)",
+      "default": "数据是新时代的 *石油*",
+      "maxLength": 400
+    },
+    {
+      "id": "unit",
+      "type": "enum",
+      "role": "style",
+      "label": "Unit",
+      "description": "Animation unit: CJK-aware word segmentation or single characters",
+      "default": "word",
+      "options": [
+        {
+          "value": "word",
+          "label": "Word (CJK-segmented)"
+        },
+        {
+          "value": "char",
+          "label": "Character"
+        }
+      ]
+    },
+    {
+      "id": "direction",
+      "type": "enum",
+      "role": "style",
+      "label": "Direction",
+      "description": "Entrance direction of each unit",
+      "default": "up",
+      "options": [
+        {
+          "value": "up",
+          "label": "Rise up"
+        },
+        {
+          "value": "down",
+          "label": "Drop down"
+        },
+        {
+          "value": "left",
+          "label": "From left"
+        },
+        {
+          "value": "right",
+          "label": "From right"
+        },
+        {
+          "value": "scale",
+          "label": "Scale in"
+        }
+      ]
+    },
+    {
+      "id": "interval",
+      "type": "number",
+      "role": "style",
+      "label": "Interval",
+      "description": "Stagger between units in seconds (0.02-0.3)",
+      "default": 0.08,
+      "min": 0.02,
+      "max": 0.3,
+      "step": 0.01
+    },
+    {
+      "id": "duration",
+      "type": "number",
+      "role": "style",
+      "label": "Duration",
+      "description": "Each unit entrance seconds (0.3-1.2)",
+      "default": 0.55,
+      "min": 0.3,
+      "max": 1.2,
+      "step": 0.05
+    },
+    {
+      "id": "font_size",
+      "type": "number",
+      "role": "style",
+      "label": "Font size",
+      "description": "Font size in px (24-220)",
+      "default": 84,
+      "min": 24,
+      "max": 220,
+      "step": 2
+    },
+    {
+      "id": "color",
+      "type": "color",
+      "role": "style",
+      "label": "Ink",
+      "description": "Text color",
+      "default": "#f1f5f9"
+    },
+    {
+      "id": "accent",
+      "type": "color",
+      "role": "style",
+      "label": "Accent",
+      "description": "Emphasized (*marked*) unit color",
+      "default": "#fbbf24"
+    },
+    {
+      "id": "intro",
+      "type": "number",
+      "role": "style",
+      "label": "Delay",
+      "description": "Seconds before the first unit starts (0-2)",
+      "default": 0.2,
+      "min": 0,
+      "max": 2,
+      "step": 0.1
+    }
+  ],
+  "files": [
+    {
+      "path": "text-word-stagger.html",
+      "target": "compositions/text-word-stagger.html",
+      "type": "hyperframes:composition"
+    }
+  ]
+}
