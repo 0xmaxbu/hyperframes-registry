@@ -1,0 +1,161 @@
+{
+  "$schema": "https://hyperframes.heygen.com/schema/registry-item.json",
+  "name": "bg-card-dance-portrait",
+  "type": "hyperframes:block",
+  "title": "Card-Dance Background — tiled photo wave (AE card dance) (portrait 9:16)",
+  "description": "Seamless looping background: one image sliced into a tile grid; a traveling wavefront makes tiles pop toward the viewer with combined tilt, brightness ripple and micro-shift (AE Card Dance look). The same image, dimmed, backs the grid so lifted tiles never expose bare background. 12s loop, cut anywhere. Landscape 16:9 twin of bg-card-dance-portrait (grid transposes, never cropped).",
+  "tags": [
+    "background",
+    "card-dance",
+    "tiles",
+    "wave",
+    "photo",
+    "loop",
+    "portrait"
+  ],
+  "dimensions": {
+    "width": 1080,
+    "height": 1920
+  },
+  "duration": 60,
+  "variables": [
+    {
+      "id": "src",
+      "type": "image",
+      "role": "content",
+      "label": "Image",
+      "description": "Image sliced into the dancing tile grid (URL or project asset path)",
+      "default": "assets/bgcd-placeholder.svg"
+    },
+    {
+      "id": "cols",
+      "type": "number",
+      "role": "style",
+      "label": "Columns",
+      "description": "Tile columns, landscape frame of reference (portrait transposes) (4-24)",
+      "default": 12,
+      "min": 4,
+      "max": 24,
+      "step": 1
+    },
+    {
+      "id": "rows",
+      "type": "number",
+      "role": "style",
+      "label": "Rows",
+      "description": "Tile rows, landscape frame of reference (portrait transposes) (4-24)",
+      "default": 7,
+      "min": 4,
+      "max": 24,
+      "step": 1
+    },
+    {
+      "id": "wave_amp",
+      "type": "number",
+      "role": "style",
+      "label": "Wave amplitude",
+      "description": "Dance strength 0-1 (tilt + brightness + pop combined)",
+      "default": 0.5,
+      "min": 0,
+      "max": 1,
+      "step": 0.05
+    },
+    {
+      "id": "wave_speed",
+      "type": "number",
+      "role": "style",
+      "label": "Wave speed",
+      "description": "Wavefront passes per 12s cycle (0.25-3)",
+      "default": 1,
+      "min": 0.25,
+      "max": 3,
+      "step": 0.25
+    },
+    {
+      "id": "gap",
+      "type": "number",
+      "role": "style",
+      "label": "Gap",
+      "description": "Static gap between tiles in px (0-20)",
+      "default": 0,
+      "min": 0,
+      "max": 20,
+      "step": 1
+    },
+    {
+      "id": "angle",
+      "type": "enum",
+      "role": "style",
+      "label": "Wave direction",
+      "description": "Travel direction of the wavefront",
+      "default": "45",
+      "options": [
+        {
+          "value": "0",
+          "label": "Horizontal"
+        },
+        {
+          "value": "45",
+          "label": "Diagonal"
+        },
+        {
+          "value": "90",
+          "label": "Vertical"
+        }
+      ]
+    },
+    {
+      "id": "scrim",
+      "type": "number",
+      "role": "style",
+      "label": "Scrim",
+      "description": "Black overlay strength for text readability 0-1",
+      "default": 0.35,
+      "min": 0,
+      "max": 1,
+      "step": 0.05
+    },
+    {
+      "id": "dim",
+      "type": "number",
+      "role": "style",
+      "label": "Dim",
+      "description": "De-bright / de-saturate 0-1",
+      "default": 0,
+      "min": 0,
+      "max": 1,
+      "step": 0.05
+    },
+    {
+      "id": "bg",
+      "type": "color",
+      "role": "style",
+      "label": "Background",
+      "description": "Base color shown before intro",
+      "default": "#000000"
+    },
+    {
+      "id": "intro",
+      "type": "number",
+      "role": "style",
+      "label": "Intro",
+      "description": "Fade-in seconds",
+      "default": 0.6,
+      "min": 0,
+      "max": 3,
+      "step": 0.1
+    }
+  ],
+  "files": [
+    {
+      "path": "bg-card-dance-portrait.html",
+      "target": "compositions/bg-card-dance-portrait.html",
+      "type": "hyperframes:composition"
+    },
+    {
+      "path": "assets/bgcd-placeholder.svg",
+      "target": "assets/bgcd-placeholder.svg",
+      "type": "hyperframes:asset"
+    }
+  ]
+}

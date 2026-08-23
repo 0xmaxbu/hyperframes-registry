@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en"
+  data-composition-variables='[
+    {"id":"src","type":"image","label":"Image","description":"Image sliced into the dancing tile grid (URL or project asset path)","default":"assets/bgcd-placeholder.svg","maxLength":300},
+    {"id":"cols","type":"number","label":"Columns","description":"Tile columns, landscape frame of reference (portrait transposes) (4-24)","default":12,"min":4,"max":24,"step":1},
+    {"id":"rows","type":"number","label":"Rows","description":"Tile rows, landscape frame of reference (portrait transposes) (4-24)","default":7,"min":4,"max":24,"step":1},
+    {"id":"wave_amp","type":"number","label":"Wave amplitude","description":"Dance strength 0-1 (tilt + brightness + pop combined)","default":0.5,"min":0,"max":1,"step":0.05},
+    {"id":"wave_speed","type":"number","label":"Wave speed","description":"Wavefront passes per 12s cycle (0.25-3)","default":1,"min":0.25,"max":3,"step":0.25},
+    {"id":"gap","type":"number","label":"Gap","description":"Static gap between tiles in px (0-20)","default":0,"min":0,"max":20,"step":1},
+    {"id":"angle","type":"enum","label":"Wave direction","description":"Travel direction of the wavefront","default":"45","options":[{"value":"0","label":"Horizontal"},{"value":"45","label":"Diagonal"},{"value":"90","label":"Vertical"}]},
+    {"id":"scrim","type":"number","label":"Scrim","description":"Black overlay strength for text readability 0-1","default":0.35,"min":0,"max":1,"step":0.05},
+    {"id":"dim","type":"number","label":"Dim","description":"De-bright / de-saturate 0-1","default":0,"min":0,"max":1,"step":0.05},
+    {"id":"bg","type":"color","label":"Background","description":"Base color shown before intro","default":"#000000"},
+    {"id":"intro","type":"number","label":"Intro","description":"Fade-in seconds","default":0.6,"min":0,"max":3,"step":0.1}
+  ]'
+>
+  <head>
+    <meta charset="utf-8" />
+    <title>bg-card-dance</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+      body { background: #000; overflow: hidden; }
+      #bgcd-root { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #000; }
+      #bgcd-bg { position: absolute; inset: 0; z-index: 0; background: #000; }
+      #bgcd-wrap { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; opacity: 0; }
+      #bgcd-under { position: absolute; inset: 0; filter: brightness(0.25); }
+      #bgcd-under img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+      #bgcd-stack { position: absolute; inset: 0; perspective: 1500px; transform-style: preserve-3d; }
+      .bgcd-tile { position: absolute; transform-origin: center center; will-change: transform, filter; background-repeat: no-repeat; }
+      #bgcd-scrim { position: absolute; inset: 0; z-index: 2; background: #000; opacity: 0; pointer-events: none; }
+    </style>
+  </head>
+  <body>
+    <div id="bgcd-root"
+      data-composition-id="bg-card-dance"
+      data-start="0"
+      data-duration="60"
+      data-width="1920"
+      data-height="1080"
+    >
+      <div id="bgcd-bg"></div>
+      <div id="bgcd-wrap">
+        <div id="bgcd-under"><img id="bgcd-img" data-var-src="src" src="assets/bgcd-placeholder.svg" alt="" /></div>
+        <div id="bgcd-stack"></div>
+      </div>
+      <div id="bgcd-scrim"></div>
+      <div id="bgcd-drv" class="clip" data-start="0" data-duration="60" data-track-index="0"
+        style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none"></div>
+    </div>
+    <script>
+      (function () {
+        "use strict";
+        window.__timelines = window.__timelines || {};
+
+        var DUR = 60, LC = 12;   // manifest 上限 = 5 × LOOP_CYCLE,任意按 12s 裁剪安全
+
+        function clamp(v, lo, hi, d) { return v != null ? Math.max(lo, Math.min(hi, Number(v))) : d; }
+
+        var V = {};
+        try { V = (window.__hyperframes && window.__hyperframes.getVariables) ? window.__hyperframes.getVariables() : {}; } catch (e) { V = {}; }
+        var amp = clamp(V.wave_amp, 0, 1, 0.5);
+        var speed = clamp(V.wave_speed, 0.25, 3, 1);
+        var gap = clamp(V.gap, 0, 20, 0);
+        var ang = String(V.angle || "45");
+        var scrim = clamp(V.scrim, 0, 1, 0.35);
+        var dim = clamp(V.dim, 0, 1, 0);
+        var bg = V.bg || "#000";
+        var introDur = clamp(V.intro, 0, 3, 0.6);
+
+        var root = document.getElementById("bgcd-root");
+        var bgEl = document.getElementById("bgcd-bg");
+        var wrap = document.getElementById("bgcd-wrap");
+        var stack = document.getElementById("bgcd-stack");
+        var img = document.getElementById("bgcd-img");
+        var scrimEl = document.getElementById("bgcd-scrim");
+        bgEl.style.background = bg;
+        if (dim > 0) wrap.style.filter = "brightness(" + (1 - 0.45 * dim) + ") saturate(" + (1 - 0.6 * dim) + ")";
+
+        var w = root.clientWidth || 1920, h = root.clientHeight || 1080;
+        var portrait = h > w;
+
+        // 网格:cols/rows 以横屏为参照,竖屏行列互换(算法重排,非裁切)
+        var cols = Math.round(clamp(V.cols, 4, 24, 12));
+        var rows = Math.round(clamp(V.rows, 4, 24, 7));
+        if (portrait) { var t = cols; cols = rows; rows = t; }
+
+        var A = ang === "0" ? 0 : ang === "90" ? Math.PI / 2 : Math.PI / 4;   // 波行进方向
+        var dirX = Math.cos(A), dirY = Math.sin(A);
+        var SPAN = cols * dirX + rows * dirY;                                 // 网格上的投影全长
+        var NS = 2;                                                           // 全屏波前数(空间项与无缝无关)
+        var LIFT = amp * 110;                                                 // 抬升上限 px(短边量级)
+
+        // ---- 瓦片:整图切片铺网格 ----
+        var tiles = [];
+        var cw = w / cols, ch = h / rows;
+        for (var r = 0; r < rows; r++) {
+          for (var c = 0; c < cols; c++) {
+            var el = document.createElement("div");
+            el.className = "bgcd-tile";
+            el.style.left = (c * cw + gap / 2) + "px";
+            el.style.top = (r * ch + gap / 2) + "px";
+            el.style.width = Math.max(2, cw - gap) + "px";
+            el.style.height = Math.max(2, ch - gap) + "px";
+            stack.appendChild(el);
+            tiles.push({ el: el, c: c, r: r });
+          }
+        }
+
+        // ---- 素材就绪后按 cover 尺寸铺切片(同 bg-page-turn 切片法) ----
+        function applyImage(mw, mh) {
+          var cs = Math.max(w / mw, h / mh), rw = mw * cs, rh = mh * cs;
+          var offX = (rw - w) / 2, offY = (rh - h) / 2;
+          var size = rw.toFixed(2) + "px " + rh.toFixed(2) + "px";
+          for (var i = 0; i < tiles.length; i++) {
+            var tt = tiles[i];
+            tt.el.style.backgroundImage = "url(" + img.src + ")";
+            tt.el.style.backgroundSize = size;
+            tt.el.style.backgroundPosition = (-(offX + tt.c * cw + gap / 2)).toFixed(2) + "px " + (-(offY + tt.r * ch + gap / 2)).toFixed(2) + "px";
+          }
+        }
+        function dims() { return (img.complete && img.naturalWidth) ? [img.naturalWidth, img.naturalHeight] : null; }
+        var d0 = dims();
+        if (d0) applyImage(d0[0], d0[1]);
+        else {
+          var onReady = function () { var dd = dims(); if (dd) { applyImage(dd[0], dd[1]); img.removeEventListener("load", onReady); } };
+          img.addEventListener("load", onReady);
+          img.addEventListener("error", function () {
+            if (img.src.indexOf("bgcd-placeholder") < 0) img.src = "assets/bgcd-placeholder.svg";
+          });
+        }
+
+        // ---- AE 三合一波浪舞:行进波前 h=max(0,sin) → 抬升 + 明暗 + 微倾 + 微移 ----
+        var _t = 0;
+        function draw(t) {
+          _t = t;
+          var phase0 = 2 * Math.PI * speed * t / LC;                          // LC 整数倍频 → 无缝
+          for (var i = 0; i < tiles.length; i++) {
+            var tt = tiles[i];
+            var proj = ((tt.c + 0.5) * dirX + (tt.r + 0.5) * dirY) / SPAN;    // 0..1 波前位置
+            var s = Math.sin(phase0 - proj * NS * 2 * Math.PI);
+            var hh = s > 0 ? s : 0;                                           // 单侧波:只抬不沉(防被衬底遮挡)
+            var b = 1 - 0.08 + 0.34 * hh;                                     // 波峰亮,波谷微暗
+            var tilt = hh * amp * 7;                                          // 微倾(度)
+            tt.el.style.transform =
+              "translate(" + (dirX * hh * LIFT * 0.22).toFixed(2) + "px," + (dirY * hh * LIFT * 0.22).toFixed(2) + "px)" +
+              " translateZ(" + (hh * LIFT).toFixed(2) + "px)" +
+              " rotateY(" + (dirX * tilt).toFixed(3) + "deg) rotateX(" + (-dirY * tilt).toFixed(3) + "deg)" +
+              " scale(" + (1 + 0.05 * hh * amp).toFixed(4) + ")";
+            tt.el.style.filter = "brightness(" + b.toFixed(3) + ")";
+          }
+        }
+        var st = {};
+        Object.defineProperty(st, "t", { get: function () { return _t; }, set: function (v) { draw(v); } });
+
+        var tl = gsap.timeline({ paused: true });
+        window.__timelines["bg-card-dance"] = tl;
+        draw(0);
+        tl.to(st, { t: DUR, duration: DUR, ease: "none" }, 0);                // 线性铺满,draw 内周期函数保证循环
+        tl.to(wrap, { opacity: 1, duration: introDur, ease: "power2.out" }, 0);
+        tl.to(scrimEl, { opacity: scrim, duration: introDur, ease: "power2.out" }, 0);
+        if (tl.duration() < DUR) tl.set({}, {}, DUR);
+      })();
+    </script>
+  </body>
+</html>
