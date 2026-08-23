@@ -32,7 +32,7 @@ npx hyperframes add preset-sequence-layers
 | 我们 | `preset-sequence-layers` / `-portrait` | 逐层翻开卡片(内容块),数据驱动(items/config/accent/ink/surface/bg 变量) |
 | 官方 vendored | 381 条(blocks 154 / components 218 / examples 9) | 原样拷贝,勿手改;重跑 vendor 即覆盖同步 |
 
-v1 后续(阶段 2):9 个素材堆叠循环背景(旧 expand.mjs 确定性算法移植),全部横竖双比例。见 issue #1。
+阶段 2(9 个 expand.mjs 素材堆叠移植)已取消(2026-08-23 Max 裁定),不做。
 
 ## 脚本
 
