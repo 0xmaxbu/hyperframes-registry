@@ -132,6 +132,12 @@
         function draw(t, a) {
           var ph = t / LOOP_CYCLE;
           ctx.globalAlpha = 1; ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
+          // 底保层:不透明,先铺满(除入场 a<1 期间,底色不露出)
+          for (var ui = 0; ui < under.length; ui++) {
+            var ub = under[ui];
+            traceBlob(ub, ub.ccx, ub.ccy, ub.R, ph);
+            ctx.globalAlpha = a; ctx.fillStyle = ub.color; ctx.fill();
+          }
           // 资历序绘制:progress = frac(ph + phi) 升序 → 在屏最久者最后画(最上层);
           // wrap(progress 1→0)发生在色块完全出画时,从顶层掉到底层 → zIndex 切换不可见
           var order = [];
@@ -158,6 +164,26 @@
             ctx.stroke();
           }
           ctx.globalAlpha = 1;
+        }
+
+        // 底保层(十轮约束:全时域覆盖,底色不得露出):8 环边圆(八方向 0.62·Ld 处,R=0.45·Ld)+ 1 中心圆(R=0.30·Ld)
+        // 覆盖经两比例角点核算(谐波 Σ≤0.10 → 覆盖半径折减 10% 计入);原位微变形保有生命感,动层在其上叠压
+        var AMPU = [0, 0.04, 0.03, 0.02, 0.01];
+        var Cu = 0.62 * Ld;
+        var under = [];
+        for (var u = 0; u < 9; u++) {
+          var hu = [];
+          for (var m2 = 1; m2 <= 4; m2++) hu.push({
+            a: AMPU[m2] * intensity, w: m2, psi: hash01(u * 19 + m2 * 23) * Math.PI * 2,
+            dir: hash01(u * 3 + m2) < 0.5 ? -1 : 1, vf: 2 + Math.floor(hash01(u * 5 + m2 * 2) * 3),
+            gf: 1, pf: hash01(u * 7 + m2 * 3) * Math.PI * 2
+          });
+          var cn = u < 8 ? DIRS[u] : [0, 0];
+          under.push({
+            ccx: w / 2 + Cu * cn[0], ccy: h / 2 + Cu * cn[1],
+            R: (u < 8 ? 0.45 : 0.30) * Ld, harm: hu,
+            color: colors[(u + 1) % colors.length]
+          });
         }
 
         var _st = { _t: 0, _a: 0 };
