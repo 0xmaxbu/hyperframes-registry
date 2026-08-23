@@ -30,6 +30,10 @@ const ACCEPT = {
   "text-bar-escort":  { dur: 8, vars: { text: "智能驾驶元年\\n*激光雷达* 降本 70%", accent: "#38bdf8", font_size: 76 } },
   "text-focus-cycle": { dur: 14, vars: { accent: "#34d399", font_size: 96 } },
   "text-fold-swap":   { dur: 9, vars: { text_a: "人口红利见顶", text_b: "*人才红利* 接棒", accent: "#f472b6", font_size: 96 } },
+  "text-masked-reveal": { dur: 8, vars: { text: "供应链 *全链路* 重构", direction: "left", accent: "#38bdf8", font_size: 88 } },
+  "text-line-cascade":  { dur: 9, vars: { text: "三个信号同时出现\\n*拐点*得到确认\\n仓位管理是核心", accent: "#f472b6", font_size: 72 } },
+  "text-bpm-bounce":    { dur: 12, vars: { text: "稳 增 长 提 质 增 效", bpm: 132, accent: "#f97316", font_size: 104 } },
+  "text-flip-3d":       { dur: 8, vars: { text: "新品 *全球首发*", axis: "y", alternate: "on", accent: "#34d399", font_size: 96 } },
 };
 for (const k of Object.keys(ACCEPT)) ACCEPT[k + "-portrait"] = ACCEPT[k];
 

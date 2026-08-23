@@ -1,0 +1,135 @@
+{
+  "$schema": "https://hyperframes.heygen.com/schema/registry-item.json",
+  "name": "text-masked-reveal",
+  "type": "hyperframes:block",
+  "title": "Masked Reveal — clip-window word sweep",
+  "description": "Content block: CJK-segmented words revealed by their own clip windows — each unit slides in inside its mask, staggered, so text appears by clean sweeps instead of flying in. Word or character units, left/right sweep. *word* markers tint with the accent color. One-shot, holds.",
+  "tags": [
+    "text",
+    "typography",
+    "cjk",
+    "mask",
+    "wipe",
+    "reveal",
+    "landscape"
+  ],
+  "dimensions": {
+    "width": 1920,
+    "height": 1080
+  },
+  "duration": 60,
+  "variables": [
+    {
+      "id": "text",
+      "type": "string",
+      "role": "content",
+      "label": "Text",
+      "description": "Text; \\n = line break; *word* = emphasized (accent color)",
+      "default": "算法重构 *全链路* 提效",
+      "maxLength": 400
+    },
+    {
+      "id": "unit",
+      "type": "enum",
+      "role": "style",
+      "label": "Unit",
+      "description": "Reveal unit: CJK word or character",
+      "default": "word",
+      "options": [
+        {
+          "value": "word",
+          "label": "Word (CJK-segmented)"
+        },
+        {
+          "value": "char",
+          "label": "Character"
+        }
+      ]
+    },
+    {
+      "id": "direction",
+      "type": "enum",
+      "role": "style",
+      "label": "Direction",
+      "description": "Sweep direction of the clip reveal",
+      "default": "left",
+      "options": [
+        {
+          "value": "left",
+          "label": "Sweep left-to-right"
+        },
+        {
+          "value": "right",
+          "label": "Sweep right-to-left"
+        }
+      ]
+    },
+    {
+      "id": "interval",
+      "type": "number",
+      "role": "style",
+      "label": "Interval",
+      "description": "Stagger between units in seconds (0.02-0.3)",
+      "default": 0.09,
+      "min": 0.02,
+      "max": 0.3,
+      "step": 0.01
+    },
+    {
+      "id": "duration",
+      "type": "number",
+      "role": "style",
+      "label": "Duration",
+      "description": "Unit reveal seconds (0.3-1.2)",
+      "default": 0.5,
+      "min": 0.3,
+      "max": 1.2,
+      "step": 0.05
+    },
+    {
+      "id": "font_size",
+      "type": "number",
+      "role": "style",
+      "label": "Font size",
+      "description": "Font size in px (24-200)",
+      "default": 84,
+      "min": 24,
+      "max": 200,
+      "step": 2
+    },
+    {
+      "id": "color",
+      "type": "color",
+      "role": "style",
+      "label": "Ink",
+      "description": "Text color",
+      "default": "#f1f5f9"
+    },
+    {
+      "id": "accent",
+      "type": "color",
+      "role": "style",
+      "label": "Accent",
+      "description": "Emphasized (*marked*) unit color",
+      "default": "#38bdf8"
+    },
+    {
+      "id": "intro",
+      "type": "number",
+      "role": "style",
+      "label": "Delay",
+      "description": "Seconds before the first unit reveals (0-2)",
+      "default": 0.2,
+      "min": 0,
+      "max": 2,
+      "step": 0.1
+    }
+  ],
+  "files": [
+    {
+      "path": "text-masked-reveal.html",
+      "target": "compositions/text-masked-reveal.html",
+      "type": "hyperframes:composition"
+    }
+  ]
+}

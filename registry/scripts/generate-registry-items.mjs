@@ -27,6 +27,10 @@ const WIP = new Set([
   "text-bar-escort", "text-bar-escort-portrait",
   "text-focus-cycle", "text-focus-cycle-portrait",
   "text-fold-swap", "text-fold-swap-portrait",
+  "text-masked-reveal", "text-masked-reveal-portrait",
+  "text-line-cascade", "text-line-cascade-portrait",
+  "text-bpm-bounce", "text-bpm-bounce-portrait",
+  "text-flip-3d", "text-flip-3d-portrait",
 ]);
 
 const items = [];

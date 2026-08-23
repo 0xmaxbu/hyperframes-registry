@@ -34,6 +34,10 @@ const LOOP_CYCLE = {
   "text-bar-escort": 0, "text-bar-escort-portrait": 0,
   "text-focus-cycle": 6, "text-focus-cycle-portrait": 6,
   "text-fold-swap": 0, "text-fold-swap-portrait": 0,
+  "text-masked-reveal": 0, "text-masked-reveal-portrait": 0,
+  "text-line-cascade": 0, "text-line-cascade-portrait": 0,
+  "text-bpm-bounce": 2.5, "text-bpm-bounce-portrait": 2.5,
+  "text-flip-3d": 0, "text-flip-3d-portrait": 0,
 };
 
 // ---- 极简 PNG 统计解码(8-bit, color type 2/6, 非交错):返回 {max, meanLuma, brightRatio} ----

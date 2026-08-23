@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en"
+  data-composition-variables='[
+    {"id":"text","type":"string","label":"Text","description":"Text; \\n = line break; *word* = emphasized (accent color)","default":"新品 *全球首发*","maxLength":400},
+    {"id":"unit","type":"enum","label":"Unit","description":"Flip unit: CJK word or character","default":"word","options":[{"value":"word","label":"Word (CJK-segmented)"},{"value":"char","label":"Character"}]},
+    {"id":"axis","type":"enum","label":"Axis","description":"Flip axis","default":"y","options":[{"value":"y","label":"Vertical card flip (rotateY)"},{"value":"x","label":"Horizontal tile flip (rotateX)"}]},
+    {"id":"alternate","type":"enum","label":"Alternate","description":"Alternate flip direction between units","default":"off","options":[{"value":"off","label":"Same direction"},{"value":"on","label":"Alternating"}]},
+    {"id":"interval","type":"number","label":"Interval","description":"Stagger between units in seconds (0.03-0.4)","default":0.1,"min":0.03,"max":0.4,"step":0.01},
+    {"id":"duration","type":"number","label":"Duration","description":"Unit flip seconds (0.35-1.2)","default":0.6,"min":0.35,"max":1.2,"step":0.05},
+    {"id":"font_size","type":"number","label":"Font size","description":"Font size in px (24-180)","default":92,"min":24,"max":180,"step":2},
+    {"id":"color","type":"color","label":"Ink","description":"Text color","default":"#f1f5f9"},
+    {"id":"accent","type":"color","label":"Accent","description":"Emphasized (*marked*) unit color","default":"#34d399"},
+    {"id":"intro","type":"number","label":"Delay","description":"Seconds before the first unit flips (0-2)","default":0.2,"min":0,"max":2,"step":0.1}
+  ]'
+>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&display=swap" rel="stylesheet" />
+    <title>text-flip-3d</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+      body { background: transparent; overflow: hidden; }
+      #tf3-root { position: relative; width: 1920px; height: 1080px; overflow: hidden; }
+      #tf3-box { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 8%; perspective: 1300px; }
+      #tf3-body { max-width: 100%; text-align: center; font-weight: 800; line-height: 1.32; transform-style: preserve-3d;
+        font-family: "Noto Sans SC", sans-serif; }
+      .tf3-line { display: block; }
+      .tf3-u { display: inline-block; transform-style: preserve-3d; will-change: transform, opacity; white-space: pre; }
+    </style>
+  </head>
+  <body>
+    <div id="tf3-root"
+      data-composition-id="text-flip-3d"
+      data-start="0"
+      data-duration="60"
+      data-width="1920"
+      data-height="1080"
+    >
+      <div id="tf3-box"><div id="tf3-body"></div></div>
+      <div id="tf3-drv" class="clip" data-start="0" data-duration="60" data-track-index="0"
+        style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none"></div>
+    </div>
+    <script>
+      (function () {
+        "use strict";
+        window.__timelines = window.__timelines || {};
+
+        var DUR = 60;
+        function clamp(v, lo, hi, d) { return v != null ? Math.max(lo, Math.min(hi, Number(v))) : d; }
+
+        var V = {};
+        try { V = (window.__hyperframes && window.__hyperframes.getVariables) ? window.__hyperframes.getVariables() : {}; } catch (e) { V = {}; }
+        var unit = V.unit === "char" ? "char" : "word";
+        var axisX = V.axis === "x";
+        var alt = V.alternate === "on";
+        var interval = clamp(V.interval, 0.03, 0.4, 0.1);
+        var dur = clamp(V.duration, 0.35, 1.2, 0.6);
+        var fontSize = clamp(V.font_size, 24, 180, 92);
+        var ink = V.color || "#f1f5f9";
+        var accent = V.accent || "#34d399";
+        var delay0 = clamp(V.intro, 0, 2, 0.2);
+
+        var body = document.getElementById("tf3-body");
+        body.style.fontSize = fontSize + "px";
+        body.style.color = ink;
+
+        // CJK 分词核心
+        function parseLine(line) {
+          var units = [], re = /\*([^*]+)\*/g, last = 0, m;
+          function push(t, emph) {
+            if (!t) return;
+            if (/^\s+$/.test(t) && units.length) { units[units.length - 1].text += t; return; }
+            units.push({ text: t, emph: emph });
+          }
+          function segment(str, emph) {
+            if (unit === "char" || !(typeof Intl !== "undefined" && Intl.Segmenter))
+              Array.from(str).forEach(function (ch) { push(ch, emph); });
+            else
+              Array.from(new Intl.Segmenter("zh", { granularity: "word" }).segment(str)).forEach(function (s) { push(s.segment, emph); });
+          }
+          while ((m = re.exec(line))) {
+            if (m.index > last) segment(line.slice(last, m.index), false);
+            segment(m[1], true);
+            last = m.index + m[0].length;
+          }
+          if (last < line.length) segment(line.slice(last), false);
+          return units;
+        }
+
+        var spans = [];
+        String(V.text == null ? "" : V.text).split(/\\n|\n/).forEach(function (line) {
+          if (line === "" && spans.length) { body.appendChild(document.createElement("br")); return; }
+          var div = document.createElement("span");
+          div.className = "tf3-line";
+          parseLine(line).forEach(function (u) {
+            var el = document.createElement("span");
+            el.className = "tf3-u";
+            el.textContent = u.text;
+            if (u.emph) { el.style.color = accent; el.style.textShadow = "0 0 24px " + accent + "55"; }
+            div.appendChild(el);
+            spans.push(el);
+          });
+          body.appendChild(div);
+        });
+
+        // 3D 翻转入场:单元绕自身中心 90°→0 翻正(perspective 1300),错峰;交替方向时奇偶取反
+        var tl = gsap.timeline({ paused: true });
+        window.__timelines["text-flip-3d"] = tl;
+        spans.forEach(function (el, i) {
+          var from = 90 * (alt && i % 2 ? -1 : 1);
+          var prop = axisX ? { rotationX: from } : { rotationY: from };
+          var to = axisX ? { rotationX: 0 } : { rotationY: 0 };
+          tl.fromTo(el,
+            Object.assign({ opacity: 0, scale: 0.86 }, prop),
+            Object.assign({ opacity: 1, scale: 1, duration: dur, ease: "back.out(1.4)" }, to),
+            delay0 + i * interval);
+        });
+        if (tl.duration() < DUR) tl.set({}, {}, DUR);
+      })();
+    </script>
+  </body>
+</html>

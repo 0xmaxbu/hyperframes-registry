@@ -3,13 +3,13 @@
   data-composition-variables='[
     {"id":"text","type":"string","label":"Word","description":"The word/phrase to stack (no line breaks)","default":"护城河","maxLength":60},
     {"id":"echoes","type":"number","label":"Echoes","description":"Echo copies behind the main word (2-8)","default":4,"min":2,"max":8,"step":1},
-    {"id":"spread","type":"number","label":"Spread","description":"Diagonal offset between copies in px (8-60)","default":22,"min":8,"max":60,"step":2},
-    {"id":"interval","type":"number","label":"Interval","description":"Stagger between copies in seconds (0.05-0.4)","default":0.12,"min":0.05,"max":0.4,"step":0.01},
-    {"id":"duration","type":"number","label":"Duration","description":"Each copy entrance seconds (0.3-1)","default":0.45,"min":0.3,"max":1,"step":0.05},
+    {"id":"spread","type":"number","label":"Spread","description":"Stair step between copies in px (8-60)","default":26,"min":8,"max":60,"step":2},
+    {"id":"interval","type":"number","label":"Interval","description":"Stagger between echoes sliding out (0.05-0.4)","default":0.12,"min":0.05,"max":0.4,"step":0.01},
+    {"id":"duration","type":"number","label":"Duration","description":"Echo slide-out seconds (0.3-1)","default":0.5,"min":0.3,"max":1,"step":0.05},
     {"id":"font_size","type":"number","label":"Font size","description":"Font size in px (40-260)","default":140,"min":40,"max":260,"step":2},
     {"id":"color","type":"color","label":"Ink","description":"Echo copies color","default":"#38bdf8"},
     {"id":"accent","type":"color","label":"Accent","description":"Main (front) word color","default":"#fbbf24"},
-    {"id":"intro","type":"number","label":"Delay","description":"Seconds before the first echo drops (0-2)","default":0.2,"min":0,"max":2,"step":0.1}
+    {"id":"intro","type":"number","label":"Delay","description":"Seconds before the main word lands (0-2)","default":0.2,"min":0,"max":2,"step":0.1}
   ]'
 >
   <head>
@@ -23,7 +23,7 @@
       *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
       body { background: transparent; overflow: hidden; }
       #twe-root { position: relative; width: 1920px; height: 1080px; overflow: hidden; }
-      #twe-box { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+      #twe-box { position: absolute; inset: 0; }
       .twe-c { position: absolute; font-weight: 800; white-space: nowrap; will-change: transform, opacity;
         font-family: "Noto Sans SC", sans-serif; }
     </style>
@@ -51,9 +51,9 @@
         var V = {};
         try { V = (window.__hyperframes && window.__hyperframes.getVariables) ? window.__hyperframes.getVariables() : {}; } catch (e) { V = {}; }
         var echoes = Math.round(clamp(V.echoes, 2, 8, 4));
-        var spread = clamp(V.spread, 8, 60, 22);
+        var spread = clamp(V.spread, 8, 60, 26);
         var interval = clamp(V.interval, 0.05, 0.4, 0.12);
-        var dur = clamp(V.duration, 0.3, 1, 0.45);
+        var dur = clamp(V.duration, 0.3, 1, 0.5);
         var fontSize = clamp(V.font_size, 40, 260, 140);
         var ink = V.color || "#38bdf8";
         var accent = V.accent || "#fbbf24";
@@ -62,44 +62,48 @@
         var box = document.getElementById("twe-box");
         var word = String(V.text == null ? "护城河" : V.text).trim() || "护城河";
 
-        // 同词重复堆叠:echo 副本沿对角递减错位(后=更暗更远),主词最后压轴落定
+        // 居中阶梯:整组以画心为重心。主词在阶梯前端(右下),副本向左上拖尾;
+        // 槽位沿对角 ∈ [−E/2, +E/2]·spread,组几何中心 ≈ 画心。以画心为原点像素定位。
+        var dx = 0.7071, dy = 0.7071;                       // 对角方向(右下)
+        var cx = 960, cy = 540;
+        function place(el, m, op, color, shadow) {
+          el.style.fontSize = fontSize + "px";
+          el.style.color = color;
+          el.style.left = (cx + dx * m) + "px";
+          el.style.top = (cy + dy * m - fontSize * 0.5) + "px";
+          el.style.transform = "translateX(-50%)";
+          el.setAttribute("data-op", String(op));
+          if (shadow) el.style.textShadow = shadow;
+          box.appendChild(el);
+        }
+        // 副本 k=1..E(主词后方,越远越淡 0.92^k 衰减——层次保留但每层可读)
         var els = [];
-        for (var k = 0; k < echoes; k++) {
+        for (var k = echoes; k >= 1; k--) {
           var el = document.createElement("div");
           el.className = "twe-c";
           el.textContent = word;
-          el.style.fontSize = fontSize + "px";
-          el.style.color = ink;
-          el.style.left = "calc(50% + " + (k * spread) + "px)";
-          el.style.top = "calc(50% + " + (k * spread * 0.75 - fontSize * 0.5) + "px)";
-          el.style.transform = "translate(-50%, 0)";
-          el.setAttribute("data-op", String(0.85 / (k + 1)));
-          box.appendChild(el);
-          els.push(el);
+          place(el, (echoes / 2 - k) * spread, 0.85 * Math.pow(0.92, k - 1), ink, null);
+          els.unshift(el);                                   // els 顺序 = 近→远
         }
         var main = document.createElement("div");
         main.className = "twe-c";
         main.textContent = word;
-        main.style.fontSize = fontSize + "px";
-        main.style.color = accent;
-        main.style.left = "50%";
-        main.style.top = "calc(50% - " + (fontSize * 0.5) + "px)";
-        main.style.transform = "translate(-50%, 0)";
-        main.style.textShadow = "0 0 40px " + accent + "66";
-        box.appendChild(main);
+        place(main, (echoes / 2) * spread, 1, accent, "0 0 44px " + accent + "66");
 
         var tl = gsap.timeline({ paused: true });
         window.__timelines["text-word-echo"] = tl;
-        els.forEach(function (el, k) {                    // echo 依次从上落下(power2.in 有重量感)
+        // 主词先落定(弹入),副本从主词身后依次滑出到各自阶梯位(发牌式,堆叠语义)
+        var tMain = delay0;
+        tl.fromTo(main, { scale: 2.1, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.45, ease: "back.out(1.8)" }, tMain);
+        var mainM = (echoes / 2) * spread;
+        els.forEach(function (el, i) {                       // i=0 最近主词;副本 j=i+1
+          var m = (echoes / 2 - i - 1) * spread;              // 该副本的目标槽(主词后第 j 步)
+          var fromX = (mainM - m) * dx, fromY = (mainM - m) * dy;
           tl.fromTo(el,
-            { y: -(fontSize * 1.6 + k * 40), opacity: 0 },
-            { y: 0, opacity: Number(el.getAttribute("data-op")), duration: dur, ease: "power2.in" },
-            delay0 + k * interval);
+            { x: fromX, y: fromY, opacity: 0 },
+            { x: 0, y: 0, opacity: Number(el.getAttribute("data-op")), duration: dur, ease: "power3.out" },
+            tMain + 0.3 + i * interval);
         });
-        tl.fromTo(main,                                   // 主词压轴:弹入 + 短暂回弹
-          { scale: 2.4, opacity: 0 },
-          { scale: 1, opacity: 1, duration: Math.max(0.4, dur * 1.1), ease: "back.out(1.8)" },
-          delay0 + els.length * interval);
         if (tl.duration() < DUR) tl.set({}, {}, DUR);
       })();
     </script>
