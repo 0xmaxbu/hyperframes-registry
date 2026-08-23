@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en"
+  data-composition-variables='[
+    {"id":"src","type":"image","label":"Image","description":"Source image multiplied into the flower ring (URL or project asset path)","default":"assets/bgk-placeholder.svg","maxLength":300},
+    {"id":"segments","type":"number","label":"Segments","description":"Petals around the center (4-16, even numbers look most symmetric)","default":8,"min":4,"max":16,"step":1},
+    {"id":"speed","type":"number","label":"Speed","description":"Full ring turns per 12s loop (integer, keeps the loop seamless) (1-3)","default":1,"min":1,"max":3,"step":1},
+    {"id":"breathe","type":"number","label":"Breathe","description":"Breathing scale amplitude 0-1 (0 = pure rotation); peak +8%","default":1,"min":0,"max":1,"step":0.05},
+    {"id":"center_scale","type":"number","label":"Center scale","description":"Center image size relative to its auto-computed base (0.6-1.6)","default":1,"min":0.6,"max":1.6,"step":0.05},
+    {"id":"scrim","type":"number","label":"Scrim","description":"Black overlay strength for text readability 0-1","default":0.35,"min":0,"max":1,"step":0.05},
+    {"id":"dim","type":"number","label":"Dim","description":"De-bright / de-saturate 0-1","default":0,"min":0,"max":1,"step":0.05},
+    {"id":"bg","type":"color","label":"Background","description":"Base color shown before intro","default":"#000000"},
+    {"id":"intro","type":"number","label":"Intro","description":"Fade-in seconds","default":0.6,"min":0,"max":3,"step":0.1}
+  ]'
+>
+  <head>
+    <meta charset="utf-8" />
+    <title>bg-kaleidoscope-portrait</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+      body { background: #000; overflow: hidden; }
+      #bgk-root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #000; }
+      #bgk-bg { position: absolute; inset: 0; z-index: 0; background: #000; }
+      #bgk-wrap { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; opacity: 0; }
+      #bgk-backing { position: absolute; will-change: transform; filter: brightness(0.32) blur(7px); }
+      #bgk-flower { position: absolute; left: 50%; top: 50%; width: 0; height: 0; will-change: transform; }
+      .bgk-petal { position: absolute; left: 0; top: 0; width: 0; height: 0; }
+      .bgk-petal img { position: absolute; will-change: transform; }
+      #bgk-center { position: absolute; will-change: transform; }
+      #bgk-scrim { position: absolute; inset: 0; z-index: 2; background: #000; opacity: 0; pointer-events: none; }
+    </style>
+  </head>
+  <body>
+    <div id="bgk-root"
+      data-composition-id="bg-kaleidoscope-portrait"
+      data-start="0"
+      data-duration="60"
+      data-width="1080"
+      data-height="1920"
+    >
+      <div id="bgk-bg"></div>
+      <div id="bgk-wrap">
+        <img id="bgk-probe" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" data-var-src="src" src="assets/bgk-placeholder.svg" alt="" />
+        <img id="bgk-backing" alt="" />
+        <div id="bgk-flower"></div>
+      </div>
+      <div id="bgk-scrim"></div>
+      <div id="bgk-drv" class="clip" data-start="0" data-duration="60" data-track-index="0"
+        style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none"></div>
+    </div>
+    <script>
+      (function () {
+        "use strict";
+        window.__timelines = window.__timelines || {};
+
+        var DUR = 60, LC = 12;   // manifest 上限 = 5 × LOOP_CYCLE;整圈旋转 + 整分频呼吸 → 12s 无缝
+
+        function clamp(v, lo, hi, d) { return v != null ? Math.max(lo, Math.min(hi, Number(v))) : d; }
+
+        var V = {};
+        try { V = (window.__hyperframes && window.__hyperframes.getVariables) ? window.__hyperframes.getVariables() : {}; } catch (e) { V = {}; }
+        var N = Math.round(clamp(V.segments, 4, 16, 8));
+        var speed = Math.round(clamp(V.speed, 1, 3, 1));           // 整数圈/LC,保无缝
+        var breathe = clamp(V.breathe, 0, 1, 1);
+        var centerScale = clamp(V.center_scale, 0.6, 1.6, 1);
+        var scrim = clamp(V.scrim, 0, 1, 0.35);
+        var dim = clamp(V.dim, 0, 1, 0);
+        var bg = V.bg || "#000";
+        var introDur = clamp(V.intro, 0, 3, 0.6);
+
+        var root = document.getElementById("bgk-root");
+        var bgEl = document.getElementById("bgk-bg");
+        var wrap = document.getElementById("bgk-wrap");
+        var probe = document.getElementById("bgk-probe");
+        var backing = document.getElementById("bgk-backing");
+        var flower = document.getElementById("bgk-flower");
+        var scrimEl = document.getElementById("bgk-scrim");
+        bgEl.style.background = bg;
+        if (dim > 0) wrap.style.filter = "brightness(" + (1 - 0.45 * dim) + ") saturate(" + (1 - 0.6 * dim) + ")";
+
+        var w = root.clientWidth || 1920, h = root.clientHeight || 1080;
+        var D2 = Math.sqrt(w * w + h * h) / 2;                     // 半对角线:外沿覆盖目标
+
+        // ---- 花瓣几何:外沿必盖四角(R + petal/2 ≥ 1.04·D2),相邻必重叠(间距 ≤ petal/1.175) ----
+        // 联立 petal = max(0.7·短边, 2.35·sin(π/N)·(1.04·D2 − petal/2)) 的闭式解
+        var sinN = Math.sin(Math.PI / N);
+        var k = 2.35 * sinN;
+        var petalA = 0.7 * Math.min(w, h);
+        var petalB = (k * 1.04 * D2) / (1 + k / 2);
+        var petal = Math.max(petalA, petalB);
+        var R = 1.04 * D2 - petal / 2;                             // 花瓣圆心半径
+        var centerL = centerScale * Math.max(2 * (R - petal / 2) * 1.15, 0.5 * Math.min(w, h));  // 中心图盖住花心
+
+        // ---- DOM:衬底(同图,暗化模糊,反向旋转 → 相对运动 + 全覆盖保底)+ 花组(中心 + N 花瓣) ----
+        var diag = Math.ceil(2 * D2 * 1.06);
+        backing.style.left = (w / 2 - diag / 2) + "px";
+        backing.style.top = (h / 2 - diag / 2) + "px";
+        backing.style.width = diag + "px";
+        backing.style.height = diag + "px";
+        backing.style.objectFit = "cover";
+
+        var centerImg = document.createElement("img");
+        centerImg.id = "bgk-center";
+        centerImg.style.left = (-centerL / 2) + "px";
+        centerImg.style.top = (-centerL / 2) + "px";
+        centerImg.style.width = centerL + "px";
+        centerImg.style.height = centerL + "px";
+        flower.appendChild(centerImg);
+
+        var petalImgs = [];
+        for (var i = 0; i < N; i++) {
+          var pw = document.createElement("div");
+          pw.className = "bgk-petal";
+          var ang = i * 360 / N;
+          pw.style.transform = "rotate(" + ang.toFixed(4) + "deg) translate(" + R.toFixed(2) + "px)";
+          var pi = document.createElement("img");
+          pi.style.left = (-petal / 2) + "px";
+          pi.style.top = (-petal / 2) + "px";
+          pi.style.width = petal + "px";
+          pi.style.height = petal + "px";
+          if (i % 2) pi.style.transform = "scaleX(-1)";            // 隔瓣镜像
+          pw.appendChild(pi);
+          flower.appendChild(pw);
+          petalImgs.push(pi);
+        }
+
+        // ---- 素材就绪后统一换图(衬底/中心/花瓣同一张) ----
+        function apply(src) {
+          backing.src = src; centerImg.src = src;
+          for (var i = 0; i < petalImgs.length; i++) petalImgs[i].src = src;
+        }
+        apply(probe.src);
+        probe.addEventListener("load", function () { apply(probe.src); });
+        probe.addEventListener("error", function () {
+          if (probe.src.indexOf("bgk-placeholder") < 0) probe.src = "assets/bgk-placeholder.svg";
+        });
+
+        // ---- 整环匀速旋转(1/LC 整数圈)+ 全体同步呼吸(1.0→1+8%·breathe,LC/2 周期) ----
+        var _t = 0;
+        function draw(t) {
+          _t = t;
+          var deg = 360 * speed * t / LC;
+          var s = 1 + 0.04 * breathe * (1 - Math.cos(4 * Math.PI * t / LC));
+          flower.style.transform = "rotate(" + (deg % 360).toFixed(3) + "deg) scale(" + s.toFixed(5) + ")";
+          backing.style.transform = "rotate(" + ((-deg) % 360).toFixed(3) + "deg)";   // 反向整圈,相对运动翻倍
+        }
+        var st = {};
+        Object.defineProperty(st, "t", { get: function () { return _t; }, set: function (v) { draw(v); } });
+
+        var tl = gsap.timeline({ paused: true });
+        window.__timelines["bg-kaleidoscope-portrait"] = tl;
+        draw(0);
+        tl.to(st, { t: DUR, duration: DUR, ease: "none" }, 0);
+        tl.to(wrap, { opacity: 1, duration: introDur, ease: "power2.out" }, 0);
+        tl.to(scrimEl, { opacity: scrim, duration: introDur, ease: "power2.out" }, 0);
+        if (tl.duration() < DUR) tl.set({}, {}, DUR);
+      })();
+    </script>
+  </body>
+</html>

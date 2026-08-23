@@ -1,0 +1,128 @@
+{
+  "$schema": "https://hyperframes.heygen.com/schema/registry-item.json",
+  "name": "bg-kaleidoscope-portrait",
+  "type": "hyperframes:block",
+  "title": "Kaleidoscope Background — rotating flower ring of one photo (portrait 9:16)",
+  "description": "Seamless looping background: one image multiplied into a flower — a full-size center copy plus a ring of petal copies (alternating mirror) rotating together, with synchronized breathing scale. A dimmed counter-rotating copy of the same image backs the flower so the frame is always fully covered. Every copy stays recognizable. 12s loop, cut anywhere. Landscape 16:9 twin of bg-kaleidoscope-portrait (geometry recomputed from the canvas diagonal).",
+  "tags": [
+    "background",
+    "kaleidoscope",
+    "flower",
+    "rotation",
+    "photo",
+    "loop",
+    "portrait"
+  ],
+  "dimensions": {
+    "width": 1080,
+    "height": 1920
+  },
+  "duration": 60,
+  "variables": [
+    {
+      "id": "src",
+      "type": "image",
+      "role": "content",
+      "label": "Image",
+      "description": "Source image multiplied into the flower ring (URL or project asset path)",
+      "default": "assets/bgk-placeholder.svg"
+    },
+    {
+      "id": "segments",
+      "type": "number",
+      "role": "style",
+      "label": "Segments",
+      "description": "Petals around the center (4-16, even numbers look most symmetric)",
+      "default": 8,
+      "min": 4,
+      "max": 16,
+      "step": 1
+    },
+    {
+      "id": "speed",
+      "type": "number",
+      "role": "style",
+      "label": "Speed",
+      "description": "Full ring turns per 12s loop (integer, keeps the loop seamless) (1-3)",
+      "default": 1,
+      "min": 1,
+      "max": 3,
+      "step": 1
+    },
+    {
+      "id": "breathe",
+      "type": "number",
+      "role": "style",
+      "label": "Breathe",
+      "description": "Breathing scale amplitude 0-1 (0 = pure rotation); peak +8%",
+      "default": 1,
+      "min": 0,
+      "max": 1,
+      "step": 0.05
+    },
+    {
+      "id": "center_scale",
+      "type": "number",
+      "role": "style",
+      "label": "Center scale",
+      "description": "Center image size relative to its auto-computed base (0.6-1.6)",
+      "default": 1,
+      "min": 0.6,
+      "max": 1.6,
+      "step": 0.05
+    },
+    {
+      "id": "scrim",
+      "type": "number",
+      "role": "style",
+      "label": "Scrim",
+      "description": "Black overlay strength for text readability 0-1",
+      "default": 0.35,
+      "min": 0,
+      "max": 1,
+      "step": 0.05
+    },
+    {
+      "id": "dim",
+      "type": "number",
+      "role": "style",
+      "label": "Dim",
+      "description": "De-bright / de-saturate 0-1",
+      "default": 0,
+      "min": 0,
+      "max": 1,
+      "step": 0.05
+    },
+    {
+      "id": "bg",
+      "type": "color",
+      "role": "style",
+      "label": "Background",
+      "description": "Base color shown before intro",
+      "default": "#000000"
+    },
+    {
+      "id": "intro",
+      "type": "number",
+      "role": "style",
+      "label": "Intro",
+      "description": "Fade-in seconds",
+      "default": 0.6,
+      "min": 0,
+      "max": 3,
+      "step": 0.1
+    }
+  ],
+  "files": [
+    {
+      "path": "bg-kaleidoscope-portrait.html",
+      "target": "compositions/bg-kaleidoscope-portrait.html",
+      "type": "hyperframes:composition"
+    },
+    {
+      "path": "assets/bgk-placeholder.svg",
+      "target": "assets/bgk-placeholder.svg",
+      "type": "hyperframes:asset"
+    }
+  ]
+}
