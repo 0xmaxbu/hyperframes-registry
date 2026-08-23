@@ -1,0 +1,169 @@
+{
+  "$schema": "https://hyperframes.heygen.com/schema/registry-item.json",
+  "name": "bg-page-turn-portrait",
+  "type": "hyperframes:block",
+  "title": "Page-Turn Background — flexible paper flip through photos (portrait 9:16)",
+  "description": "One-shot background: 2-3 full-bleed photos turned like book pages with a flexible-paper peel curl (traveling fold, per-strip shading, landing flutter; flex 0 = rigid board). Landscape flips around the left hinge, portrait around the top (calendar). Turns span scene_dur, then the last page holds still. Landscape 16:9 twin of bg-page-turn-portrait.",
+  "tags": [
+    "background",
+    "page-turn",
+    "paper",
+    "flip",
+    "photo",
+    "one-shot",
+    "portrait"
+  ],
+  "dimensions": {
+    "width": 1080,
+    "height": 1920
+  },
+  "duration": 60,
+  "variables": [
+    {
+      "id": "srcs",
+      "type": "string",
+      "role": "content",
+      "label": "Pages",
+      "description": "2-3 page images separated by \";\" (URL or project asset path), turned in order",
+      "default": "assets/bgpt-page-1.svg;assets/bgpt-page-2.svg;assets/bgpt-page-3.svg",
+      "maxLength": 900
+    },
+    {
+      "id": "turn_dur",
+      "type": "number",
+      "role": "style",
+      "label": "Turn duration",
+      "description": "Seconds per page turn (0.8-6)",
+      "default": 2.2,
+      "min": 0.8,
+      "max": 6,
+      "step": 0.1
+    },
+    {
+      "id": "dwell",
+      "type": "number",
+      "role": "style",
+      "label": "Dwell",
+      "description": "Rest seconds between turns (0-5)",
+      "default": 0.8,
+      "min": 0,
+      "max": 5,
+      "step": 0.1
+    },
+    {
+      "id": "direction",
+      "type": "enum",
+      "role": "style",
+      "label": "Direction",
+      "description": "Hinge side: auto = landscape left / portrait top",
+      "default": "auto",
+      "options": [
+        {
+          "value": "auto",
+          "label": "Auto"
+        },
+        {
+          "value": "ltr",
+          "label": "Landscape left / Portrait top"
+        },
+        {
+          "value": "rtl",
+          "label": "Landscape right / Portrait bottom"
+        }
+      ]
+    },
+    {
+      "id": "paper",
+      "type": "color",
+      "role": "style",
+      "label": "Paper",
+      "description": "Page back (reverse side) color",
+      "default": "#f3ead8"
+    },
+    {
+      "id": "flex",
+      "type": "number",
+      "role": "style",
+      "label": "Flex",
+      "description": "Paper softness 0-1: 0 = rigid board, 1 = soft sheet (wider traveling fold)",
+      "default": 0.6,
+      "min": 0,
+      "max": 1,
+      "step": 0.05
+    },
+    {
+      "id": "scrim",
+      "type": "number",
+      "role": "style",
+      "label": "Scrim",
+      "description": "Black overlay strength for text readability 0-1",
+      "default": 0.35,
+      "min": 0,
+      "max": 1,
+      "step": 0.05
+    },
+    {
+      "id": "dim",
+      "type": "number",
+      "role": "style",
+      "label": "Dim",
+      "description": "De-bright / de-saturate 0-1",
+      "default": 0,
+      "min": 0,
+      "max": 1,
+      "step": 0.05
+    },
+    {
+      "id": "bg",
+      "type": "color",
+      "role": "style",
+      "label": "Background",
+      "description": "Base color shown before intro",
+      "default": "#000000"
+    },
+    {
+      "id": "intro",
+      "type": "number",
+      "role": "style",
+      "label": "Intro",
+      "description": "Fade-in seconds",
+      "default": 0.6,
+      "min": 0,
+      "max": 3,
+      "step": 0.1
+    },
+    {
+      "id": "scene_dur",
+      "type": "number",
+      "role": "style",
+      "label": "Scene duration",
+      "description": "Plan to cut around this length; turns span it (5-60), remainder holds the last page",
+      "default": 15,
+      "min": 5,
+      "max": 60,
+      "step": 1
+    }
+  ],
+  "files": [
+    {
+      "path": "bg-page-turn-portrait.html",
+      "target": "compositions/bg-page-turn-portrait.html",
+      "type": "hyperframes:composition"
+    },
+    {
+      "path": "assets/bgpt-page-1.svg",
+      "target": "assets/bgpt-page-1.svg",
+      "type": "hyperframes:asset"
+    },
+    {
+      "path": "assets/bgpt-page-2.svg",
+      "target": "assets/bgpt-page-2.svg",
+      "type": "hyperframes:asset"
+    },
+    {
+      "path": "assets/bgpt-page-3.svg",
+      "target": "assets/bgpt-page-3.svg",
+      "type": "hyperframes:asset"
+    }
+  ]
+}

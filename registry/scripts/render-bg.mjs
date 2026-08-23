@@ -19,6 +19,7 @@ const ACCEPT = {
   "bg-particles":    { dur: 26, vars: { colors: "#f472b6,#facc15", density: 130, link_distance: 140, scrim: 0.2 } },
   "bg-image":        { dur: 15, vars: { move: "pan-right", max_zoom: 1.25, scrim: 0.45, dim: 0.3, scene_dur: 15 } },
   "bg-video":        { dur: 15, vars: { move: "push-in", max_zoom: 1.2, scrim: 0.4, dim: 0.25, scene_dur: 15 } },
+  "bg-page-turn":    { dur: 15, vars: { turn_dur: 2.6, dwell: 1.0, flex: 0.8, paper: "#efe6d0", scrim: 0.45, dim: 0.15, scene_dur: 15 } },
 };
 for (const k of Object.keys(ACCEPT)) ACCEPT[k + "-portrait"] = ACCEPT[k];
 

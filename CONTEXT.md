@@ -13,8 +13,8 @@ _Avoid_: 背景 preset、background helper、背景组件
 _Avoid_: 前景 preset
 
 **素材堆叠类 (material-stack family)**:
-以 2-3 张素材卡片的空间编排构成运动的 14 种手法:9 种已有确定性实现(drop-stack、card-fan、sequence-layers、photo-cascade、hanging-polaroids、domino、pip-grid、scatter、flat-carousel)+ 5 种待实现(card-dance、sliding-stripes、kaleidoscope、page-turn、highlight-zoom)。v1 中全部以背景块形态交付。
-_Avoid_: 素材类、堆叠 preset
+以素材(image)本身为画面主体的编排手法,共 14 种,分两支:多素材空间编排(drop-stack、card-fan、sequence-layers、photo-cascade、hanging-polaroids、domino、pip-grid、scatter、flat-carousel、page-turn)与单素材切分重组(card-dance、sliding-stripes、kaleidoscope、highlight-zoom)。与算法生成图案类背景(bg-matrix/bg-particles 等)的分界即在于画面主体是否为素材本体。v1 中全部以背景块形态交付。
+_Avoid_: 素材类、堆叠 preset、"2-3 张卡片编排"(覆盖不了单图切分一支)
 
 **叙事规则 (narrative rule)**:
 没有视觉形态的编排知识(Murch 剪辑律动、Progressive Disclosure、Narrative Genres)。不属于 registry,将来写进视频工作流的 SKILL 引导。

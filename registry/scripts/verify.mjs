@@ -23,6 +23,7 @@ const LOOP_CYCLE = {
   "bg-particles": 12, "bg-particles-portrait": 12,
   "bg-image": 0, "bg-image-portrait": 0,
   "bg-video": 0, "bg-video-portrait": 0,
+  "bg-page-turn": 0, "bg-page-turn-portrait": 0,
 };
 
 // ---- 极简 PNG 统计解码(8-bit, color type 2/6, 非交错):返回 {max, meanLuma, brightRatio} ----

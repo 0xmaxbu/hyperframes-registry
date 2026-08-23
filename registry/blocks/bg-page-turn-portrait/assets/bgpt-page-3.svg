@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1030"/>
+      <stop offset="0.4" stop-color="#4a2a55"/>
+      <stop offset="0.68" stop-color="#a05a72"/>
+      <stop offset="0.86" stop-color="#e8927a"/>
+      <stop offset="1" stop-color="#ffd9a8"/>
+    </linearGradient>
+    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e8a884"/>
+      <stop offset="0.3" stop-color="#8a5570"/>
+      <stop offset="1" stop-color="#1a1030"/>
+    </linearGradient>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#sky)"/>
+  <circle cx="820" cy="760" r="110" fill="#ffefc9"/>
+  <circle cx="820" cy="760" r="160" fill="#ffefc9" opacity="0.22"/>
+  <g fill="#ffffff" opacity="0.5">
+    <circle cx="240" cy="110" r="1.5"/><circle cx="520" cy="70" r="1.5"/><circle cx="1400" cy="120" r="1.5"/>
+    <circle cx="1650" cy="60" r="2"/><circle cx="1100" cy="80" r="1.5"/>
+  </g>
+  <path d="M0 750 L260 630 L500 730 L740 610 L960 740 L1180 650 L1420 750 L1660 660 L1920 750 L1920 770 L0 770 Z" fill="#3a2050"/>
+  <path d="M0 770 L220 680 L460 770 L740 690 L1020 780 L1300 695 L1600 790 L1920 710 L1920 800 L0 800 Z" fill="#251538"/>
+  <rect y="780" width="1920" height="300" fill="url(#water)"/>
+  <rect x="770" y="785" width="100" height="290" fill="#ffefc9" opacity="0.25"/>
+  <rect x="795" y="785" width="50" height="290" fill="#ffefc9" opacity="0.32"/>
+  <g stroke="#ffffff" stroke-opacity="0.1" stroke-width="2">
+    <line x1="0" y1="860" x2="1920" y2="860"/><line x1="0" y1="930" x2="1920" y2="930"/><line x1="0" y1="1000" x2="1920" y2="1000"/>
+  </g>
+</svg>

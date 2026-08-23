@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en"
+  data-composition-variables='[
+    {"id":"srcs","type":"string","label":"Pages","description":"2-3 page images separated by \";\" (URL or project asset path), turned in order","default":"assets/bgpt-page-1.svg;assets/bgpt-page-2.svg;assets/bgpt-page-3.svg","maxLength":900},
+    {"id":"turn_dur","type":"number","label":"Turn duration","description":"Seconds per page turn (0.8-6)","default":2.2,"min":0.8,"max":6,"step":0.1},
+    {"id":"dwell","type":"number","label":"Dwell","description":"Rest seconds between turns (0-5)","default":0.8,"min":0,"max":5,"step":0.1},
+    {"id":"direction","type":"enum","label":"Direction","description":"Hinge side: auto = landscape left / portrait top","default":"auto","options":[{"value":"auto","label":"Auto"},{"value":"ltr","label":"Landscape left / Portrait top"},{"value":"rtl","label":"Landscape right / Portrait bottom"}]},
+    {"id":"paper","type":"color","label":"Paper","description":"Page back (reverse side) color","default":"#f3ead8"},
+    {"id":"flex","type":"number","label":"Flex","description":"Paper softness 0-1: 0 = rigid board, 1 = soft sheet (wider traveling fold)","default":0.6,"min":0,"max":1,"step":0.05},
+    {"id":"scrim","type":"number","label":"Scrim","description":"Black overlay strength for text readability 0-1","default":0.35,"min":0,"max":1,"step":0.05},
+    {"id":"dim","type":"number","label":"Dim","description":"De-bright / de-saturate 0-1","default":0,"min":0,"max":1,"step":0.05},
+    {"id":"bg","type":"color","label":"Background","description":"Base color shown before intro","default":"#000000"},
+    {"id":"intro","type":"number","label":"Intro","description":"Fade-in seconds","default":0.6,"min":0,"max":3,"step":0.1},
+    {"id":"scene_dur","type":"number","label":"Scene duration","description":"Plan to cut around this length; turns span it (5-60), remainder holds the last page","default":15,"min":5,"max":60,"step":1}
+  ]'
+>
+  <head>
+    <meta charset="utf-8" />
+    <title>bg-page-turn</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+      body { background: #000; overflow: hidden; }
+      #bgpt-root { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #000; }
+      #bgpt-bg { position: absolute; inset: 0; z-index: 0; background: #000; }
+      #bgpt-wrap { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; opacity: 0; }
+      #bgpt-stack { position: absolute; inset: 0; perspective: 1700px; }
+      .bgpt-page { position: absolute; inset: 0; transform-style: preserve-3d; }
+      .bgpt-seg { position: absolute; transform-style: preserve-3d; will-change: transform; }
+      .bgpt-face, .bgpt-back { position: absolute; inset: 0; backface-visibility: hidden; background-repeat: no-repeat; }
+      .bgpt-back { background: #f3ead8; }
+      #bgpt-scrim { position: absolute; inset: 0; z-index: 2; background: #000; opacity: 0; pointer-events: none; }
+    </style>
+  </head>
+  <body>
+    <div id="bgpt-root"
+      data-composition-id="bg-page-turn"
+      data-start="0"
+      data-duration="60"
+      data-width="1920"
+      data-height="1080"
+    >
+      <div id="bgpt-bg"></div>
+      <div id="bgpt-wrap">
+        <div id="bgpt-stack"></div>
+      </div>
+      <div id="bgpt-scrim"></div>
+      <div id="bgpt-drv" class="clip" data-start="0" data-duration="60" data-track-index="0"
+        style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none"></div>
+    </div>
+    <script>
+      (function () {
+        "use strict";
+        window.__timelines = window.__timelines || {};
+
+        var DUR = 60;   // manifest 上限;翻页序列按 scene_dur 铺,剩余停驻末页
+
+        function clamp(v, lo, hi, d) { return v != null ? Math.max(lo, Math.min(hi, Number(v))) : d; }
+        function smooth(x) { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); }
+
+        var V = {};
+        try { V = (window.__hyperframes && window.__hyperframes.getVariables) ? window.__hyperframes.getVariables() : {}; } catch (e) { V = {}; }
+        var turnDur = clamp(V.turn_dur, 0.8, 6, 2.2);
+        var dwell = clamp(V.dwell, 0, 5, 0.8);
+        var dir = V.direction || "auto";
+        var paper = V.paper || "#f3ead8";
+        var flex = clamp(V.flex, 0, 1, 0.6);
+        var scrim = clamp(V.scrim, 0, 1, 0.35);
+        var dim = clamp(V.dim, 0, 1, 0);
+        var bg = V.bg || "#000";
+        var introDur = clamp(V.intro, 0, 3, 0.6);
+        var sceneDur = clamp(V.scene_dur, 5, DUR, 15);
+
+        // 页面清单:2-3 张;空/畸形回退三张占位
+        var DEFAULTS = ["assets/bgpt-page-1.svg", "assets/bgpt-page-2.svg", "assets/bgpt-page-3.svg"];
+        var pages = String(V.srcs || "").split(";").map(function (s) { return s.trim(); }).filter(Boolean);
+        if (!pages.length) pages = DEFAULTS.slice();
+        if (pages.length > 3) pages = pages.slice(0, 3);
+        var K = pages.length;
+
+        var root = document.getElementById("bgpt-root");
+        var bgEl = document.getElementById("bgpt-bg");
+        var wrap = document.getElementById("bgpt-wrap");
+        var stack = document.getElementById("bgpt-stack");
+        var scrimEl = document.getElementById("bgpt-scrim");
+        bgEl.style.background = bg;
+        if (dim > 0) wrap.style.filter = "brightness(" + (1 - 0.45 * dim) + ") saturate(" + (1 - 0.6 * dim) + ")";
+
+        var w = root.clientWidth || 1920, h = root.clientHeight || 1080;
+        var portrait = h > w;
+
+        // 铰链/链向:横屏 auto/ltr=左缘右翻、rtl=右缘左翻;竖屏 auto/ltr=顶缘上翻、rtl=底缘下翻
+        var hingeLeft = !portrait && dir !== "rtl";
+        var hingeRight = !portrait && dir === "rtl";
+        var hingeTop = portrait && dir !== "rtl";
+        var hingeBottom = portrait && dir === "rtl";
+        var AXIS = portrait ? "X" : "Y";
+        // 翻转弧向:正角把 +x/+y 链端送向观察者 → 镜像铰链(右/底)取负
+        var SIGN = (hingeLeft || hingeTop) ? 1 : -1;
+        var N = 28;                                   // 条带数(链节)
+        var longSide = portrait ? h : w;              // 链长 = 长边(横竖都是 1920)
+        var SEG = longSide / N;
+
+        // 弯折宽度(段):flex=0 刚性板;flex>0 行进弯折线宽 → 纸张柔韧
+        var W = flex <= 0.02 ? 0 : Math.max(2, Math.round(flex * N * 0.5));
+        var SPAN = N + W;                             // 弯折线从自由缘走到铰链的归一时间跨度
+
+        var tl = gsap.timeline({ paused: true });
+        window.__timelines["bg-page-turn"] = tl;
+
+        // ---- 条带链 DOM:每页一条 N 节链,铰链在链首;子节挂父节远端(浏览器做运动学) ----
+        var segEls = [], faceEls = [], backEls = [];
+        for (var k = 0; k < K; k++) {
+          var page = document.createElement("div");
+          page.className = "bgpt-page";
+          page.style.zIndex = String(20 - k);
+          page.style.transform = "translateZ(" + ((K - k) * 0.6).toFixed(2) + "px)";  // 微分层防共面 z-fighting
+          var parent = page, segs = [], faces = [], backs = [];
+          for (var i = 0; i < N; i++) {
+            var seg = document.createElement("div");
+            seg.className = "bgpt-seg";
+            if (!portrait) {
+              seg.style.width = (SEG + 2) + "px";
+              seg.style.height = "100%";
+              if (hingeLeft) { seg.style.transformOrigin = "left center"; seg.style.left = (i ? SEG : 0) + "px"; }
+              else { seg.style.transformOrigin = "right center"; if (i) { seg.style.left = -SEG + "px"; } else { seg.style.right = "0"; } }
+            } else {
+              seg.style.width = "100%";
+              seg.style.height = (SEG + 2) + "px";
+              if (hingeTop) { seg.style.transformOrigin = "top center"; seg.style.top = (i ? SEG : 0) + "px"; }
+              else { seg.style.transformOrigin = "bottom center"; if (i) { seg.style.top = -SEG + "px"; } else { seg.style.bottom = "0"; } }
+            }
+            var face = document.createElement("div");
+            face.className = "bgpt-face";
+            face.style.background = paper;           // 图未就绪前以纸色顶住
+            var back = document.createElement("div");
+            back.className = "bgpt-back";
+            back.style.background = paper;
+            back.style.transform = portrait ? "rotateX(180deg)" : "rotateY(180deg)";
+            seg.appendChild(face); seg.appendChild(back);
+            parent.appendChild(seg);
+            parent = seg;
+            segs.push(seg); faces.push(face); backs.push(back);
+          }
+          stack.appendChild(page);
+          segEls.push(segs); faceEls.push(faces); backEls.push(backs);
+        }
+
+        // ---- 素材加载:cover 尺寸算好后给各条带正面铺切片 ----
+        function applyImage(k, img) {
+          var iw = img.naturalWidth, ih = img.naturalHeight;
+          if (!iw || !ih) return;
+          var cs = Math.max(w / iw, h / ih), rw = iw * cs, rh = ih * cs;
+          var offX = (rw - w) / 2, offY = (rh - h) / 2;
+          var size = rw.toFixed(2) + "px " + rh.toFixed(2) + "px";
+          for (var i = 0; i < N; i++) {
+            var f = faceEls[k][i];
+            f.style.backgroundImage = "url(" + img.src + ")";
+            f.style.backgroundSize = size;
+            if (!portrait) {
+              var px = hingeLeft ? i * SEG : w - (i + 1) * SEG - 2;   // 条带画面左缘(含 2px 搭接)
+              f.style.backgroundPosition = (-(offX + px)).toFixed(2) + "px " + (-offY).toFixed(2) + "px";
+            } else {
+              var py = hingeTop ? i * SEG : h - (i + 1) * SEG - 2;
+              f.style.backgroundPosition = (-offX).toFixed(2) + "px " + (-(offY + py)).toFixed(2) + "px";
+            }
+          }
+        }
+        for (var k2 = 0; k2 < K; k2++) {
+          (function (k) {
+            var im = new Image();
+            im.onload = function () { applyImage(k, im); };
+            im.onerror = function () {                               // 自定义素材失败 → 回退占位变体
+              if (String(im.src).indexOf("bgpt-page-") < 0) { im.src = DEFAULTS[k % 3]; }
+            };
+            im.src = pages[k];
+          })(k2);
+        }
+
+        // ---- 剥离卷曲绘制:累计角 C_i = 行进弯折线模型;节角 α_i = C_i − C_{i−1};落页微颤 ----
+        function draw(k, u) {
+          var prev = 0;
+          for (var i = 0; i < N; i++) {
+            var C;
+            if (!W) C = 180 * u;                                     // 刚性:整页单铰链
+            else {
+              var d = N - 1 - i;                                     // 距自由缘段数:自由缘先掀
+              C = 180 * smooth((u * SPAN - d) / W);
+            }
+            var alpha = C - prev; prev = C;
+            if (W && flex > 0.05) {                                  // 微颤:完成段位相衰减振荡,u=1 精确归零
+              var uDone = (d + W) / SPAN;
+              if (u > uDone) {
+                var f = Math.min(1, (u - uDone) / Math.max(1e-4, 1 - uDone));
+                alpha += 5 * flex * (i / (N - 1)) * Math.sin(4 * Math.PI * f) * (1 - f);
+              }
+            }
+            segEls[k][i].style.transform = "rotate" + AXIS + "(" + (SIGN * alpha).toFixed(3) + "deg)";
+            var b = 1 - 0.38 * Math.min(1, Math.abs(alpha) / 75);    // 弯折段明暗(卷曲受光)
+            var filt = "brightness(" + b.toFixed(3) + ")";
+            faceEls[k][i].style.filter = filt;
+            backEls[k][i].style.filter = filt;
+          }
+        }
+        var states = [];
+        for (var k3 = 0; k3 < K; k3++) {
+          (function (k) {
+            var s = { _u: 0 };
+            Object.defineProperty(s, "u", {
+              get: function () { return s._u; },
+              set: function (v) { s._u = v; draw(k, v); }
+            });
+            states.push(s);
+            draw(k, 0);                                              // 铺平初值
+          })(k3);
+        }
+
+        // ---- 序列:入场 → (停驻→翻页)×(K−1) → 停驻末页;铺不满 scene_dur 则比例压缩(保底节拍) ----
+        var turns = K - 1;
+        if (turns > 0) {
+          var req = introDur + turns * turnDur + (turns + 1) * dwell;
+          if (req > sceneDur) {
+            var s = (sceneDur - introDur) / (turns * turnDur + (turns + 1) * dwell);
+            turnDur = Math.max(0.8, turnDur * s);
+            dwell = Math.max(0.2, dwell * s);
+          }
+          var t0 = introDur + dwell;
+          for (var q = 0; q < turns; q++) {
+            tl.to(states[q], { u: 1, duration: turnDur, ease: "power2.inOut" }, t0 + q * (turnDur + dwell));
+          }
+        }
+        tl.to(wrap, { opacity: 1, duration: introDur, ease: "power2.out" }, 0);
+        tl.to(scrimEl, { opacity: scrim, duration: introDur, ease: "power2.out" }, 0);
+        if (tl.duration() < DUR) tl.set({}, {}, DUR);                // 静止铺满上限,宿主任意裁剪
+      })();
+    </script>
+  </body>
+</html>
