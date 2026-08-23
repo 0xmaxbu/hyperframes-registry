@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en"
+  data-composition-variables='[
+    {"id":"src","type":"image","label":"Image","description":"Full-bleed cover image (URL or project asset path)","default":"assets/bg-image-placeholder.svg"},
+    {"id":"move","type":"enum","label":"Camera move","description":"Ken-burns move over scene_dur","default":"push-in","options":[{"value":"push-in","label":"Push in"},{"value":"zoom-in","label":"Zoom in"},{"value":"pull-out","label":"Pull out"},{"value":"zoom-out","label":"Zoom out"},{"value":"pan-left","label":"Pan left"},{"value":"pan-right","label":"Pan right"},{"value":"pan-up","label":"Pan up"},{"value":"pan-down","label":"Pan down"},{"value":"none","label":"None"}]},
+    {"id":"max_zoom","type":"number","label":"Max zoom","description":"Ken-burns zoom ceiling (1-2)","default":1.15,"min":1,"max":2,"step":0.05},
+    {"id":"focus_x","type":"number","label":"Focus X","description":"Transform origin X 0-1","default":0.5,"min":0,"max":1,"step":0.05},
+    {"id":"focus_y","type":"number","label":"Focus Y","description":"Transform origin Y 0-1","default":0.5,"min":0,"max":1,"step":0.05},
+    {"id":"scrim","type":"number","label":"Scrim","description":"Black overlay strength for text readability 0-1","default":0.35,"min":0,"max":1,"step":0.05},
+    {"id":"dim","type":"number","label":"Dim","description":"De-bright / de-saturate 0-1","default":0,"min":0,"max":1,"step":0.05},
+    {"id":"bg","type":"color","label":"Background","description":"Base color shown before intro","default":"#000000"},
+    {"id":"intro","type":"number","label":"Intro","description":"Fade-in seconds","default":0.6,"min":0,"max":3,"step":0.1},
+    {"id":"scene_dur","type":"number","label":"Scene duration","description":"Plan to cut around this length; the move spans it (5-60)","default":15,"min":5,"max":60,"step":1}
+  ]'
+>
+  <head>
+    <meta charset="utf-8" />
+    <title>bg-image</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+      body { background: #000; overflow: hidden; }
+      #bgi-root { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #000; }
+      #bgi-bg { position: absolute; inset: 0; z-index: 0; background: #000; }
+      #bgi-wrap { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; opacity: 0; will-change: transform; }
+      #bgi-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+      #bgi-scrim { position: absolute; inset: 0; z-index: 2; background: #000; opacity: 0; pointer-events: none; }
+    </style>
+  </head>
+  <body>
+    <div id="bgi-root"
+      data-composition-id="bg-image"
+      data-start="0"
+      data-duration="60"
+      data-width="1920"
+      data-height="1080"
+    >
+      <div id="bgi-bg"></div>
+      <div id="bgi-wrap">
+        <!-- data-var-src:官方变量绑定换图;authored src 是占位回退 -->
+        <img id="bgi-img" data-var-src="src" src="assets/bg-image-placeholder.svg" alt="" />
+      </div>
+      <div id="bgi-scrim"></div>
+      <div id="bgi-drv" class="clip" data-start="0" data-duration="60" data-track-index="0"
+        style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none"></div>
+    </div>
+    <script>
+      (function () {
+        "use strict";
+        window.__timelines = window.__timelines || {};
+
+        var DUR = 60;   // manifest 上限;一次性运镜按 scene_dur 铺满,宿主按计划裁剪
+
+        function clamp(v, lo, hi, d) { return v != null ? Math.max(lo, Math.min(hi, Number(v))) : d; }
+
+        var V = {};
+        try { V = (window.__hyperframes && window.__hyperframes.getVariables) ? window.__hyperframes.getVariables() : {}; } catch (e) { V = {}; }
+        var maxZoom = clamp(V.max_zoom, 1, 2, 1.15);
+        var fx = clamp(V.focus_x, 0, 1, 0.5), fy = clamp(V.focus_y, 0, 1, 0.5);
+        var scrim = clamp(V.scrim, 0, 1, 0.35);
+        var dim = clamp(V.dim, 0, 1, 0);
+        var bg = V.bg || "#000";
+        var introDur = clamp(V.intro, 0, 3, 0.6);
+        var sceneDur = clamp(V.scene_dur, 5, DUR, 15);
+
+        var MOVES = {
+          "push-in":   { s0: 1, s1: "Z", x0: 0, y0: 0, x1: 0, y1: 0 },
+          "zoom-in":   { s0: 1, s1: "Z", x0: 0, y0: 0, x1: 0, y1: 0 },
+          "pull-out":  { s0: "Z", s1: 1, x0: 0, y0: 0, x1: 0, y1: 0 },
+          "zoom-out":  { s0: "Z", s1: 1, x0: 0, y0: 0, x1: 0, y1: 0 },
+          "pan-left":  { s0: "Z", s1: "Z", x0: "P", y0: 0, x1: "-P", y1: 0 },
+          "pan-right": { s0: "Z", s1: "Z", x0: "-P", y0: 0, x1: "P", y1: 0 },
+          "pan-up":    { s0: "Z", s1: "Z", x0: 0, y0: "P", x1: 0, y1: "-P" },
+          "pan-down":  { s0: "Z", s1: "Z", x0: 0, y0: "-P", x1: 0, y1: "P" },
+          "none":      { s0: 1, s1: 1, x0: 0, y0: 0, x1: 0, y1: 0 }
+        };
+        var mv = MOVES[V.move] || MOVES["push-in"];
+
+        var root = document.getElementById("bgi-root");
+        var bgEl = document.getElementById("bgi-bg");
+        var wrap = document.getElementById("bgi-wrap");
+        var img = document.getElementById("bgi-img");
+        var scrimEl = document.getElementById("bgi-scrim");
+        bgEl.style.background = bg;
+        if (dim > 0) wrap.style.filter = "brightness(" + (1 - 0.45 * dim) + ") saturate(" + (1 - 0.6 * dim) + ")";
+
+        // 画布自适应:pan 幅度按实际宽度算(横竖孪生同源)
+        var w = root.clientWidth || 1920;
+        var pan = (maxZoom - 1) * 0.5 * w * 0.6;
+        function val(v) { return v === "Z" ? maxZoom : v === "P" ? pan : v === "-P" ? -pan : v; }
+
+        var tl = gsap.timeline({ paused: true });
+        tl.set(wrap, { transformOrigin: (fx * 100).toFixed(1) + "% " + (fy * 100).toFixed(1) + "%", scale: val(mv.s0), x: val(mv.x0), y: val(mv.y0) }, 0);
+        tl.to(wrap, { opacity: 1, duration: introDur, ease: "power2.out" }, 0);                 // 入场(bg 底色 → 图片)
+        tl.to(scrimEl, { opacity: scrim, duration: introDur, ease: "power2.out" }, 0);
+        var moveStart = Math.min(introDur * 0.3, sceneDur);
+        tl.to(wrap, { scale: val(mv.s1), x: val(mv.x1), y: val(mv.y1), duration: Math.max(0.1, sceneDur - moveStart), ease: "none" }, moveStart);
+        if (tl.duration() < DUR) tl.set({}, {}, DUR);                                            // 之后保持末态(宿主裁剪/退场)
+        window.__timelines["bg-image"] = tl;
+      })();
+    </script>
+  </body>
+</html>

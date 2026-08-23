@@ -1,0 +1,131 @@
+{
+  "$schema": "https://hyperframes.heygen.com/schema/registry-item.json",
+  "name": "bg-bauhaus-portrait",
+  "type": "hyperframes:block",
+  "title": "Bauhaus Background — drifting geometric collage (portrait 9:16)",
+  "description": "Seamlessly looping bauhaus background: thick diagonal bars, hatched rotating circles, dots and wire spheres drift across a static dot-matrix, dark or light base. Full-canvas, bottom track under text. Landscape 16:9 twin of bg-bauhaus-portrait (same source, re-laid out for aspect).",
+  "tags": [
+    "background",
+    "bauhaus",
+    "geometric",
+    "collage",
+    "loop",
+    "seamless",
+    "portrait"
+  ],
+  "dimensions": {
+    "width": 1080,
+    "height": 1920
+  },
+  "duration": 60,
+  "variables": [
+    {
+      "id": "colors",
+      "type": "string",
+      "role": "style",
+      "label": "Colors",
+      "description": "Comma-separated hex list (last = hatched-circle accent)",
+      "default": "#7c5fc4,#3b6fb5,#a99bd4,#ffffff,#e8746b",
+      "maxLength": 200
+    },
+    {
+      "id": "density",
+      "type": "number",
+      "role": "style",
+      "label": "Density",
+      "description": "Element density multiplier (0.5-2)",
+      "default": 1,
+      "min": 0.5,
+      "max": 2,
+      "step": 0.1
+    },
+    {
+      "id": "drift_speed",
+      "type": "number",
+      "role": "style",
+      "label": "Drift speed",
+      "description": "Cross-screen drift feel (10-150)",
+      "default": 50,
+      "min": 10,
+      "max": 150,
+      "step": 10
+    },
+    {
+      "id": "rotation",
+      "type": "number",
+      "role": "style",
+      "label": "Rotation",
+      "description": "Hatched circle rotation (1-4)",
+      "default": 1,
+      "min": 1,
+      "max": 4,
+      "step": 1
+    },
+    {
+      "id": "base",
+      "type": "enum",
+      "role": "style",
+      "label": "Base",
+      "description": "Dark or light canvas base",
+      "default": "dark",
+      "options": [
+        {
+          "value": "dark",
+          "label": "Dark"
+        },
+        {
+          "value": "light",
+          "label": "Light"
+        }
+      ]
+    },
+    {
+      "id": "bg",
+      "type": "color",
+      "role": "style",
+      "label": "Background",
+      "description": "Canvas base color (default follows base)",
+      "default": ""
+    },
+    {
+      "id": "scrim",
+      "type": "number",
+      "role": "style",
+      "label": "Scrim",
+      "description": "Black overlay strength for text readability 0-1",
+      "default": 0,
+      "min": 0,
+      "max": 1,
+      "step": 0.05
+    },
+    {
+      "id": "dim",
+      "type": "number",
+      "role": "style",
+      "label": "Dim",
+      "description": "De-bright / de-saturate 0-1",
+      "default": 0,
+      "min": 0,
+      "max": 1,
+      "step": 0.05
+    },
+    {
+      "id": "intro",
+      "type": "number",
+      "role": "style",
+      "label": "Intro",
+      "description": "Fade-in seconds",
+      "default": 0.6,
+      "min": 0,
+      "max": 3,
+      "step": 0.1
+    }
+  ],
+  "files": [
+    {
+      "path": "bg-bauhaus-portrait.html",
+      "target": "compositions/bg-bauhaus-portrait.html",
+      "type": "hyperframes:composition"
+    }
+  ]
+}

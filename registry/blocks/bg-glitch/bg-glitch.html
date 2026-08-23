@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en"
+  data-composition-variables='[
+    {"id":"color","type":"color","label":"Glitch color","description":"Magenta-family primary","default":"#ff2d95"},
+    {"id":"text","type":"string","label":"Text","description":"Center glitch headline (\\n for two lines; long single line auto-wraps)","default":"GAME OVER","maxLength":40},
+    {"id":"bg","type":"color","label":"Background","description":"Canvas base color","default":"#07040a"},
+    {"id":"scrim","type":"number","label":"Scrim","description":"Black overlay strength for text readability 0-1","default":0,"min":0,"max":1,"step":0.05},
+    {"id":"dim","type":"number","label":"Dim","description":"De-bright / de-saturate 0-1","default":0,"min":0,"max":1,"step":0.05},
+    {"id":"intro","type":"number","label":"Intro","description":"Fade-in seconds","default":0.6,"min":0,"max":3,"step":0.1}
+  ]'
+>
+  <head>
+    <meta charset="utf-8" />
+    <title>bg-glitch</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+      body { background: #07040a; overflow: hidden; }
+      #bgg-root { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #07040a; }
+      #bgg-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+      #bgg-scrim { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; }
+    </style>
+  </head>
+  <body>
+    <div id="bgg-root"
+      data-composition-id="bg-glitch"
+      data-start="0"
+      data-duration="60"
+      data-width="1920"
+      data-height="1080"
+    >
+      <canvas id="bgg-canvas"></canvas>
+      <div id="bgg-scrim"></div>
+      <div id="bgg-drv" class="clip" data-start="0" data-duration="60" data-track-index="0"
+        style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none"></div>
+    </div>
+    <script>
+      (function () {
+        "use strict";
+        window.__timelines = window.__timelines || {};
+
+        var DUR = 60;          // manifest duration = 15 × LOOP_CYCLE
+        var LOOP_CYCLE = 4;
+
+        function hash01(n) { var x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
+        function clamp(v, lo, hi, d) { return v != null ? Math.max(lo, Math.min(hi, Number(v))) : d; }
+
+        var V = {};
+        try { V = (window.__hyperframes && window.__hyperframes.getVariables) ? window.__hyperframes.getVariables() : {}; } catch (e) { V = {}; }
+        var color = V.color || "#ff2d95";
+        var cyan = "#00f0ff";
+        var FREQ = 2;
+        var bg = V.bg || "#07040a";
+        var scrim = clamp(V.scrim, 0, 1, 0);
+        var dim = clamp(V.dim, 0, 1, 0);
+        var introDur = clamp(V.intro, 0, 3, 0.6);
+
+        var raw = String(V.text == null ? "GAME OVER" : V.text);
+        var lines = raw.split("\n");
+        if (lines.length === 1 && raw.length > 8 && raw.indexOf(" ") >= 0) {
+          var ws = raw.split(" "), mid = Math.ceil(ws.length / 2);
+          lines = [ws.slice(0, mid).join(" "), ws.slice(mid).join(" ")];
+        }
+        if (!lines.length) lines = ["GAME OVER"];
+
+        var root = document.getElementById("bgg-root");
+        var canvas = document.getElementById("bgg-canvas");
+        var scrimEl = document.getElementById("bgg-scrim");
+        var w = root.clientWidth || 1920, h = root.clientHeight || 1080;
+        canvas.width = w; canvas.height = h;
+        if (dim > 0) canvas.style.filter = "brightness(" + (1 - 0.45 * dim) + ") saturate(" + (1 - 0.6 * dim) + ")";
+        var ctx = canvas.getContext("2d");
+
+        var GRID = 48;
+        var gcols = Math.ceil(w / GRID), grows = Math.ceil(h / GRID);
+        var N_FRAG = 64, N_TEAR = 6;
+
+        // 纯函数 draw:品红网格 + 像素碎片 + 撕裂条(RGB 偏移) + 扫描线 + 文字多频色散抖动;全周期函数 → seamless
+        function draw(t, a) {
+          var ph = (t / LOOP_CYCLE) * FREQ;
+          ctx.globalAlpha = 1; ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
+
+          ctx.strokeStyle = color; ctx.globalAlpha = (0.16 + 0.05 * Math.sin(2 * Math.PI * ph)) * a;
+          ctx.lineWidth = 1; ctx.beginPath();
+          for (var gx = 0; gx <= w; gx += GRID) { ctx.moveTo(gx + 0.5, 0); ctx.lineTo(gx + 0.5, h); }
+          for (var gy = 0; gy <= h; gy += GRID) { ctx.moveTo(0, gy + 0.5); ctx.lineTo(w, gy + 0.5); }
+          ctx.stroke();
+
+          for (var i = 0; i < N_FRAG; i++) {
+            var fi = 1 + (i % 4);
+            var off = hash01(i * 17 + 3);
+            var vis = Math.sin(2 * Math.PI * fi * ph * 3 + off * 6.2832);
+            if (vis < 0.25) continue;
+            var fx = Math.floor(hash01(i * 7 + 3) * gcols);
+            var fy = Math.floor(hash01(i * 13 + 5) * grows);
+            var pick = hash01(i * 31 + 1);
+            ctx.globalAlpha = Math.min(1, (vis - 0.25) * 1.6) * a;
+            ctx.fillStyle = pick < 0.4 ? "#ffffff" : pick < 0.7 ? cyan : color;
+            ctx.fillRect(fx * GRID, fy * GRID + GRID * 0.3, GRID * (0.3 + 0.7 * hash01(i * 3 + 1)), GRID * 0.32);
+          }
+
+          for (var b = 0; b < N_TEAR; b++) {
+            var tf = 1 + (b % 3);
+            var toff = hash01(b * 53 + 7);
+            var tvis = Math.sin(2 * Math.PI * tf * ph * 2 + toff * 6.2832);
+            if (tvis < 0.3) continue;
+            var by = (hash01(b * 19 + 2) * h + Math.sin(2 * Math.PI * (ph * tf + b * 0.33)) * 24 + h) % h;
+            var bh = 6 + hash01(b * 19) * 22;
+            var dx = Math.sin(2 * Math.PI * (ph * tf + b)) * 28 * (b % 2 ? 1 : -1);
+            ctx.globalAlpha = Math.min(0.7, (tvis - 0.3) * 1.2) * a;
+            ctx.fillStyle = cyan; ctx.fillRect(dx, by, w, bh * 0.4);
+            ctx.fillStyle = color; ctx.fillRect(-dx, by + bh * 0.4, w, bh * 0.4);
+          }
+
+          ctx.globalAlpha = 0.06 * a; ctx.fillStyle = "#ffffff";
+          for (var sy = 0; sy < h; sy += 4) ctx.fillRect(0, sy, w, 1);
+
+          var maxLen = 1;
+          for (var li = 0; li < lines.length; li++) maxLen = Math.max(maxLen, lines[li].length || 1);
+          var fontSize = Math.min(180, Math.floor((w * 0.72) / (maxLen * 0.62)));
+          var lineH = fontSize * 1.12;
+          var g5 = Math.sin(2 * Math.PI * 5 * ph), g7 = Math.sin(2 * Math.PI * 7 * ph), g11 = Math.sin(2 * Math.PI * 11 * ph);
+          var spike = Math.max(0, Math.sin(2 * Math.PI * 3 * ph) - 0.9) * 90;
+          var jx = g5 * 3 + g7 * 2 + g11 * 1.5 + spike * (g5 > 0 ? 1 : -1);
+          var jy = Math.sin(2 * Math.PI * 6 * ph) * 2 + spike * 0.3 * g7;
+          var disp = 5 + Math.max(0, Math.sin(2 * Math.PI * 2 * ph) - 0.6) * 12;
+          ctx.font = "700 " + fontSize + "px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+          var totalH = lines.length * lineH;
+          for (var l = 0; l < lines.length; l++) {
+            var ly = h / 2 + jy - totalH / 2 + lineH * (l + 0.5);
+            var lx = jx + Math.sin(2 * Math.PI * (4 + l) * ph) * 2;
+            ctx.globalAlpha = 0.85 * a;
+            ctx.fillStyle = cyan; ctx.fillText(lines[l], w / 2 + lx - disp, ly);
+            ctx.fillStyle = color; ctx.fillText(lines[l], w / 2 - lx + disp, ly);
+            ctx.fillStyle = "#ffffff"; ctx.fillText(lines[l], w / 2, ly);
+          }
+          ctx.globalAlpha = 1; ctx.textAlign = "start"; ctx.textBaseline = "alphabetic";
+        }
+
+        var _st = { _t: 0, _a: 0 };
+        Object.defineProperty(_st, "t", { configurable: true, get: function () { return _st._t; }, set: function (v) { _st._t = v; draw(_st._t, _st._a); } });
+        Object.defineProperty(_st, "a", { configurable: true, get: function () { return _st._a; }, set: function (v) { _st._a = v; draw(_st._t, _st._a); } });
+
+        var tl = gsap.timeline({ paused: true });
+        tl.to(_st, { t: DUR, duration: DUR, ease: "none" }, 0);
+        tl.to(_st, { a: 1, duration: introDur, ease: "power2.out" }, 0);
+        tl.to(scrimEl, { opacity: scrim, duration: introDur, ease: "power2.out" }, 0);
+        if (tl.duration() < DUR) tl.set({}, {}, DUR);
+        draw(0, 0);
+        window.__timelines["bg-glitch"] = tl;
+      })();
+    </script>
+  </body>
+</html>

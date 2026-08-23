@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en"
+  data-composition-variables='[
+    {"id":"colors","type":"string","label":"Colors","description":"Comma-separated hex list","default":"#22d3ee,#818cf8,#a78bfa","maxLength":200},
+    {"id":"density","type":"number","label":"Density","description":"Particle count (8-220)","default":95,"min":8,"max":220,"step":5},
+    {"id":"speed","type":"number","label":"Speed","description":"Float speed feel (10-200)","default":50,"min":10,"max":200,"step":10},
+    {"id":"link_distance","type":"number","label":"Link distance","description":"Near-neighbor link radius in px (40-400)","default":170,"min":40,"max":400,"step":10},
+    {"id":"intensity","type":"number","label":"Intensity","description":"Link/glow brightness 0-1","default":0.9,"min":0,"max":1,"step":0.05},
+    {"id":"drift","type":"number","label":"Drift","description":"Drift amplitude (10-200)","default":70,"min":10,"max":200,"step":10},
+    {"id":"bg","type":"color","label":"Background","description":"Canvas base color","default":"#05060d"},
+    {"id":"scrim","type":"number","label":"Scrim","description":"Black overlay strength for text readability 0-1","default":0,"min":0,"max":1,"step":0.05},
+    {"id":"dim","type":"number","label":"Dim","description":"De-bright / de-saturate 0-1","default":0,"min":0,"max":1,"step":0.05},
+    {"id":"intro","type":"number","label":"Intro","description":"Fade-in seconds","default":0.6,"min":0,"max":3,"step":0.1}
+  ]'
+>
+  <head>
+    <meta charset="utf-8" />
+    <title>bg-particles-portrait</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+      body { background: #05060d; overflow: hidden; }
+      #bgp-root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #05060d; }
+      #bgp-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+      #bgp-scrim { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; }
+    </style>
+  </head>
+  <body>
+    <div id="bgp-root"
+      data-composition-id="bg-particles-portrait"
+      data-start="0"
+      data-duration="60"
+      data-width="1080"
+      data-height="1920"
+    >
+      <canvas id="bgp-canvas"></canvas>
+      <div id="bgp-scrim"></div>
+      <div id="bgp-drv" class="clip" data-start="0" data-duration="60" data-track-index="0"
+        style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none"></div>
+    </div>
+    <script>
+      (function () {
+        "use strict";
+        window.__timelines = window.__timelines || {};
+
+        var DUR = 60;          // manifest duration = 5 × LOOP_CYCLE
+        var LOOP_CYCLE = 12;
+
+        function hash01(n) { var x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
+        function clamp(v, lo, hi, d) { return v != null ? Math.max(lo, Math.min(hi, Number(v))) : d; }
+
+        var V = {};
+        try { V = (window.__hyperframes && window.__hyperframes.getVariables) ? window.__hyperframes.getVariables() : {}; } catch (e) { V = {}; }
+        var colors = String(V.colors || "").split(",").map(function (s) { return s.trim(); }).filter(Boolean);
+        if (!colors.length) colors = ["#22d3ee", "#818cf8", "#a78bfa"];
+        var density = Math.round(clamp(V.density, 8, 220, 95));
+        var speed = clamp(V.speed, 10, 200, 50);
+        var link = clamp(V.link_distance, 40, 400, 170);
+        var intensity = clamp(V.intensity, 0, 1, 0.9);
+        var drift = clamp(V.drift, 10, 200, 70);
+        var bg = V.bg || "#05060d";
+        var scrim = clamp(V.scrim, 0, 1, 0);
+        var dim = clamp(V.dim, 0, 1, 0);
+        var introDur = clamp(V.intro, 0, 3, 0.6);
+        var freq = Math.max(1, Math.min(4, Math.round(speed / 50)));
+
+        var root = document.getElementById("bgp-root");
+        var canvas = document.getElementById("bgp-canvas");
+        var scrimEl = document.getElementById("bgp-scrim");
+        var w = root.clientWidth || 1920, h = root.clientHeight || 1080;
+        canvas.width = w; canvas.height = h;
+        if (dim > 0) canvas.style.filter = "brightness(" + (1 - 0.45 * dim) + ") saturate(" + (1 - 0.6 * dim) + ")";
+        var ctx = canvas.getContext("2d");
+
+        var parts = [];
+        for (var i = 0; i < density; i++) {
+          parts.push({
+            bx: hash01(i * 3 + 1), by: hash01(i * 5 + 2),
+            ax: (0.02 + 0.05 * hash01(i * 7 + 3)) * (drift / 70), ay: (0.02 + 0.05 * hash01(i * 11 + 4)) * (drift / 70),
+            px: hash01(i * 13 + 5) * 6.2832, py: hash01(i * 17 + 6) * 6.2832,
+            r: 3 + 4 * hash01(i * 19 + 7), col: colors[i % colors.length]
+          });
+        }
+
+        // 纯函数 draw:坐标 = base + amp·sin(2π·freq·ph + phase) → 周期 LOOP_CYCLE 无缝;近距连线 + 光晕
+        function draw(t, a) {
+          ctx.globalAlpha = 1; ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
+          var ph = t / LOOP_CYCLE;
+          var pos = new Float32Array(density * 2);
+          for (var i = 0; i < density; i++) {
+            var q = parts[i];
+            pos[i * 2] = (q.bx + q.ax * Math.sin(2 * Math.PI * freq * ph + q.px)) * w;
+            pos[i * 2 + 1] = (q.by + q.ay * Math.sin(2 * Math.PI * freq * ph + q.py)) * h;
+          }
+          var link2 = link * link;
+          ctx.lineWidth = 1.8;
+          for (var i2 = 0; i2 < density; i2++) {
+            for (var j = i2 + 1; j < density; j++) {
+              var dx = pos[i2 * 2] - pos[j * 2], dy = pos[i2 * 2 + 1] - pos[j * 2 + 1];
+              var d2 = dx * dx + dy * dy;
+              if (d2 < link2) {
+                ctx.globalAlpha = (1 - Math.sqrt(d2) / link) * intensity * a;
+                ctx.strokeStyle = parts[i2].col;
+                ctx.beginPath(); ctx.moveTo(pos[i2 * 2], pos[i2 * 2 + 1]); ctx.lineTo(pos[j * 2], pos[j * 2 + 1]); ctx.stroke();
+              }
+            }
+          }
+          for (var i3 = 0; i3 < density; i3++) {
+            ctx.globalAlpha = 0.22 * intensity * a; ctx.fillStyle = parts[i3].col;
+            ctx.beginPath(); ctx.arc(pos[i3 * 2], pos[i3 * 2 + 1], parts[i3].r * 3.2, 0, 6.2832); ctx.fill();
+            ctx.globalAlpha = a; ctx.fillStyle = parts[i3].col;
+            ctx.beginPath(); ctx.arc(pos[i3 * 2], pos[i3 * 2 + 1], parts[i3].r, 0, 6.2832); ctx.fill();
+          }
+          ctx.globalAlpha = 1;
+        }
+
+        var _st = { _t: 0, _a: 0 };
+        Object.defineProperty(_st, "t", { configurable: true, get: function () { return _st._t; }, set: function (v) { _st._t = v; draw(_st._t, _st._a); } });
+        Object.defineProperty(_st, "a", { configurable: true, get: function () { return _st._a; }, set: function (v) { _st._a = v; draw(_st._t, _st._a); } });
+
+        var tl = gsap.timeline({ paused: true });
+        tl.to(_st, { t: DUR, duration: DUR, ease: "none" }, 0);
+        tl.to(_st, { a: 1, duration: introDur, ease: "power2.out" }, 0);
+        tl.to(scrimEl, { opacity: scrim, duration: introDur, ease: "power2.out" }, 0);
+        if (tl.duration() < DUR) tl.set({}, {}, DUR);
+        draw(0, 0);
+        window.__timelines["bg-particles-portrait"] = tl;
+      })();
+    </script>
+  </body>
+</html>

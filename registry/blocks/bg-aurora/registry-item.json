@@ -1,0 +1,24 @@
+{
+  "$schema": "https://hyperframes.heygen.com/schema/registry-item.json",
+  "name": "bg-aurora",
+  "type": "hyperframes:block",
+  "title": "Aurora Background — seamless organic color blobs",
+  "description": "Seamlessly looping aurora background: large harmonically-deformed color blobs blend over the canvas (light or dark base) with drifting accent lines. Full-canvas, bottom track under text; scrim/dim keep copy readable. Landscape 16:9 twin of bg-aurora-portrait (same source, re-laid out for aspect).",
+  "tags": ["background", "aurora", "organic", "gradient", "loop", "seamless", "landscape"],
+  "dimensions": { "width": 1920, "height": 1080 },
+  "duration": 60,
+  "variables": [
+    { "id": "colors", "type": "string", "role": "style", "label": "Colors", "description": "Comma-separated hex list, e.g. #3b82f6,#8b5cf6,#db2777", "default": "#3b82f6,#8b5cf6,#db2777,#f59e0b", "maxLength": 200 },
+    { "id": "density", "type": "number", "role": "style", "label": "Density", "description": "Blob count (3-9)", "default": 6, "min": 3, "max": 9, "step": 1 },
+    { "id": "speed", "type": "number", "role": "style", "label": "Speed", "description": "Drift speed feel (10-200)", "default": 50, "min": 10, "max": 200, "step": 10 },
+    { "id": "intensity", "type": "number", "role": "style", "label": "Intensity", "description": "Blob deformation 0-1", "default": 0.6, "min": 0, "max": 1, "step": 0.05 },
+    { "id": "base", "type": "enum", "role": "style", "label": "Base", "description": "Light or dark canvas base", "default": "light", "options": [{"value":"light","label":"Light"},{"value":"dark","label":"Dark"}] },
+    { "id": "bg", "type": "color", "role": "style", "label": "Background", "description": "Canvas base color (default follows base)", "default": "" },
+    { "id": "scrim", "type": "number", "role": "style", "label": "Scrim", "description": "Black overlay strength for text readability 0-1", "default": 0, "min": 0, "max": 1, "step": 0.05 },
+    { "id": "dim", "type": "number", "role": "style", "label": "Dim", "description": "De-bright / de-saturate 0-1", "default": 0, "min": 0, "max": 1, "step": 0.05 },
+    { "id": "intro", "type": "number", "role": "style", "label": "Intro", "description": "Fade-in seconds", "default": 0.6, "min": 0, "max": 3, "step": 0.1 }
+  ],
+  "files": [
+    { "path": "bg-aurora.html", "target": "compositions/bg-aurora.html", "type": "hyperframes:composition" }
+  ]
+}

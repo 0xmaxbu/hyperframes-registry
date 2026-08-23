@@ -1,0 +1,88 @@
+{
+  "$schema": "https://hyperframes.heygen.com/schema/registry-item.json",
+  "name": "bg-glitch-portrait",
+  "type": "hyperframes:block",
+  "title": "Glitch Background — cyber grid, tears and RGB-split headline (portrait 9:16)",
+  "description": "Seamlessly looping cyber-glitch background: magenta breathing grid, pixel fragments, horizontal RGB-offset tears, scanlines and a multi-frequency RGB-dispersed headline (custom text). Layout fixed by preset; only color/text adjustable. Landscape 16:9 twin of bg-glitch-portrait (same source, re-laid out for aspect).",
+  "tags": [
+    "background",
+    "glitch",
+    "cyberpunk",
+    "rgb-split",
+    "loop",
+    "seamless",
+    "portrait"
+  ],
+  "dimensions": {
+    "width": 1080,
+    "height": 1920
+  },
+  "duration": 60,
+  "variables": [
+    {
+      "id": "color",
+      "type": "color",
+      "role": "style",
+      "label": "Glitch color",
+      "description": "Magenta-family primary",
+      "default": "#ff2d95"
+    },
+    {
+      "id": "text",
+      "type": "string",
+      "role": "content",
+      "label": "Text",
+      "description": "Center glitch headline (\\n for two lines; long single line auto-wraps)",
+      "default": "GAME OVER",
+      "maxLength": 40
+    },
+    {
+      "id": "bg",
+      "type": "color",
+      "role": "style",
+      "label": "Background",
+      "description": "Canvas base color",
+      "default": "#07040a"
+    },
+    {
+      "id": "scrim",
+      "type": "number",
+      "role": "style",
+      "label": "Scrim",
+      "description": "Black overlay strength for text readability 0-1",
+      "default": 0,
+      "min": 0,
+      "max": 1,
+      "step": 0.05
+    },
+    {
+      "id": "dim",
+      "type": "number",
+      "role": "style",
+      "label": "Dim",
+      "description": "De-bright / de-saturate 0-1",
+      "default": 0,
+      "min": 0,
+      "max": 1,
+      "step": 0.05
+    },
+    {
+      "id": "intro",
+      "type": "number",
+      "role": "style",
+      "label": "Intro",
+      "description": "Fade-in seconds",
+      "default": 0.6,
+      "min": 0,
+      "max": 3,
+      "step": 0.1
+    }
+  ],
+  "files": [
+    {
+      "path": "bg-glitch-portrait.html",
+      "target": "compositions/bg-glitch-portrait.html",
+      "type": "hyperframes:composition"
+    }
+  ]
+}

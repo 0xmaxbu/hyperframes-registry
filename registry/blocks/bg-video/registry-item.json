@@ -1,0 +1,29 @@
+{
+  "$schema": "https://hyperframes.heygen.com/schema/registry-item.json",
+  "name": "bg-video",
+  "type": "hyperframes:block",
+  "title": "Video Background — framework-played footage with ken-burns",
+  "description": "One-shot video background: muted cover-cropped footage owned by the HyperFrames media runtime (play offset and rate via variables), with a seek-safe ken-burns move over scene_dur and scrim for text. Non-looping. Landscape 16:9 twin of bg-video-portrait (same source, re-laid out for aspect).",
+  "tags": ["background", "video", "footage", "ken-burns", "one-shot", "landscape"],
+  "dimensions": { "width": 1920, "height": 1080 },
+  "duration": 60,
+  "variables": [
+    { "id": "src", "type": "string", "role": "content", "label": "Video", "description": "Muted background video (URL or project asset path)", "default": "assets/bg-video-placeholder.mp4", "maxLength": 300 },
+    { "id": "poster", "type": "string", "role": "content", "label": "Poster", "description": "Poster image path (optional)", "default": "", "maxLength": 300 },
+    { "id": "speed", "type": "number", "role": "style", "label": "Speed", "description": "Playback rate (0.6-1)", "default": 1, "min": 0.6, "max": 1, "step": 0.05 },
+    { "id": "play_from", "type": "number", "role": "style", "label": "Play from", "description": "Source start offset in seconds", "default": 0, "min": 0, "max": 3600, "step": 0.5 },
+    { "id": "move", "type": "enum", "role": "style", "label": "Camera move", "description": "Ken-burns move over scene_dur", "default": "push-in", "options": [{"value":"push-in","label":"Push in"},{"value":"zoom-in","label":"Zoom in"},{"value":"pull-out","label":"Pull out"},{"value":"zoom-out","label":"Zoom out"},{"value":"pan-left","label":"Pan left"},{"value":"pan-right","label":"Pan right"},{"value":"pan-up","label":"Pan up"},{"value":"pan-down","label":"Pan down"},{"value":"none","label":"None"}] },
+    { "id": "max_zoom", "type": "number", "role": "style", "label": "Max zoom", "description": "Ken-burns zoom ceiling (1-2)", "default": 1.12, "min": 1, "max": 2, "step": 0.05 },
+    { "id": "focus_x", "type": "number", "role": "style", "label": "Focus X", "description": "Transform origin X 0-1", "default": 0.5, "min": 0, "max": 1, "step": 0.05 },
+    { "id": "focus_y", "type": "number", "role": "style", "label": "Focus Y", "description": "Transform origin Y 0-1", "default": 0.5, "min": 0, "max": 1, "step": 0.05 },
+    { "id": "scrim", "type": "number", "role": "style", "label": "Scrim", "description": "Black overlay strength for text readability 0-1", "default": 0.35, "min": 0, "max": 1, "step": 0.05 },
+    { "id": "dim", "type": "number", "role": "style", "label": "Dim", "description": "De-bright / de-saturate 0-1", "default": 0, "min": 0, "max": 1, "step": 0.05 },
+    { "id": "bg", "type": "color", "role": "style", "label": "Background", "description": "Base color shown before intro", "default": "#000000" },
+    { "id": "intro", "type": "number", "role": "style", "label": "Intro", "description": "Fade-in seconds", "default": 0.6, "min": 0, "max": 3, "step": 0.1 },
+    { "id": "scene_dur", "type": "number", "role": "style", "label": "Scene duration", "description": "Plan to cut around this length; the move spans it (5-60)", "default": 15, "min": 5, "max": 60, "step": 1 }
+  ],
+  "files": [
+    { "path": "bg-video.html", "target": "compositions/bg-video.html", "type": "hyperframes:composition" },
+    { "path": "assets/bg-video-placeholder.mp4", "target": "assets/bg-video-placeholder.mp4", "type": "hyperframes:asset" }
+  ]
+}

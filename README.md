@@ -26,10 +26,11 @@ npx hyperframes add preset-sequence-layers
 
 | 来源 | 条目 | 说明 |
 |---|---|---|
+| 我们 | `bg-image` / `bg-video` / `bg-matrix` / `bg-particles` / `bg-aurora` / `bg-bauhaus` / `bg-data-stream` / `bg-glitch`(各含 `-portrait`) | 背景块:一次性素材类(image/video,ken-burns + scrim)+ 循环算法类(其余,无缝 loop);全屏 track-0,横竖双比例画布自适应(算法重排,非裁切) |
 | 我们 | `preset-sequence-layers` / `-portrait` | 逐层翻开卡片(内容块),数据驱动(items/config/accent/ink/surface/bg 变量) |
 | 官方 vendored | 381 条(blocks 154 / components 218 / examples 9) | 原样拷贝,勿手改;重跑 vendor 即覆盖同步 |
 
-v1 规划(阶段 1-3):`bg-image/video/matrix/particles/aurora/bauhaus/data-stream/glitch` + 14 个素材堆叠背景块,全部横竖双比例。见 issue #1。
+v1 后续(阶段 2-3):9 个素材堆叠循环背景 + 5 个新技术背景,全部横竖双比例。见 issue #1。
 
 ## 脚本
 
@@ -37,6 +38,9 @@ v1 规划(阶段 1-3):`bg-image/video/matrix/particles/aurora/bauhaus/data-strea
 npm run vendor:official   # 同步官方 registry(官方更新唯一入口;冲突时我们的条目优先)
 npm run gen:registry      # 扫 registry/{blocks,components,examples} → registry.json(勿手改)
 npm run sync:portrait     # 横屏规范源 → 竖屏孪生块(改横屏后必跑,勿手改竖屏)
+npm run lint:items        # 我们的每个条目:抛弃式宿主 + 官方 lint
+npm run verify            # 我们的每个 block:挂载 → snapshot 抽帧 → 非黑/在动/无缝三判据
+npm run render:bg -- <name>...   # 渲染验收件到 renders/(gitignored,人工看片)
 npm run check:landscape   # examples 16:9 宿主 hyperframes check
 npm run check:portrait    # examples 9:16 宿主 hyperframes check
 ```

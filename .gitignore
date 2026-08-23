@@ -4,6 +4,7 @@ examples/*/compositions/
 demos/*.mp4
 demos/*.gif
 demos/compositions/
+renders/
 *.log
 
 # node

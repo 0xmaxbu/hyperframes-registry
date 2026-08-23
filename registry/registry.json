@@ -24,6 +24,70 @@
       "type": "hyperframes:block"
     },
     {
+      "name": "bg-aurora",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "bg-aurora-portrait",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "bg-bauhaus",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "bg-bauhaus-portrait",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "bg-data-stream",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "bg-data-stream-portrait",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "bg-glitch",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "bg-glitch-portrait",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "bg-image",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "bg-image-portrait",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "bg-matrix",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "bg-matrix-portrait",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "bg-particles",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "bg-particles-portrait",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "bg-video",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "bg-video-portrait",
+      "type": "hyperframes:block"
+    },
+    {
       "name": "blue-sweater-intro-video",
       "type": "hyperframes:block"
     },

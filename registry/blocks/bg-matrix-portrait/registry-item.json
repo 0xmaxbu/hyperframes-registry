@@ -1,0 +1,168 @@
+{
+  "$schema": "https://hyperframes.heygen.com/schema/registry-item.json",
+  "name": "bg-matrix-portrait",
+  "type": "hyperframes:block",
+  "title": "Matrix Rain Background — seamless falling phrase rain (portrait 9:16)",
+  "description": "Seamlessly looping code-rain background: per-column phrase or charset streams with CRT-decay trails. Full-canvas, mount on the bottom track under text; scrim/dim variables keep copy readable. Landscape 16:9 twin of bg-matrix-portrait (same source, re-laid out for aspect).",
+  "tags": [
+    "background",
+    "matrix",
+    "code-rain",
+    "cyber",
+    "loop",
+    "seamless",
+    "portrait"
+  ],
+  "dimensions": {
+    "width": 1080,
+    "height": 1920
+  },
+  "duration": 64,
+  "variables": [
+    {
+      "id": "color",
+      "type": "color",
+      "role": "style",
+      "label": "Rain color",
+      "description": "Trail character color",
+      "default": "#00ff41"
+    },
+    {
+      "id": "density",
+      "type": "number",
+      "role": "style",
+      "label": "Density",
+      "description": "Max column count (10-300)",
+      "default": 200,
+      "min": 10,
+      "max": 300,
+      "step": 5
+    },
+    {
+      "id": "speed",
+      "type": "number",
+      "role": "style",
+      "label": "Speed",
+      "description": "Fall speed feel (20-400)",
+      "default": 120,
+      "min": 20,
+      "max": 400,
+      "step": 10
+    },
+    {
+      "id": "charset",
+      "type": "enum",
+      "role": "style",
+      "label": "Charset",
+      "description": "katakana / digits / hex / binary / en / zh / ja (phrase rain)",
+      "default": "katakana",
+      "options": [
+        {
+          "value": "katakana",
+          "label": "Katakana"
+        },
+        {
+          "value": "digits",
+          "label": "Digits"
+        },
+        {
+          "value": "hex",
+          "label": "Hex"
+        },
+        {
+          "value": "binary",
+          "label": "Binary"
+        },
+        {
+          "value": "en",
+          "label": "English phrases"
+        },
+        {
+          "value": "zh",
+          "label": "Chinese phrases"
+        },
+        {
+          "value": "ja",
+          "label": "Japanese phrases"
+        }
+      ]
+    },
+    {
+      "id": "intensity",
+      "type": "number",
+      "role": "style",
+      "label": "Intensity",
+      "description": "Trail brightness 0-1",
+      "default": 0.85,
+      "min": 0,
+      "max": 1,
+      "step": 0.05
+    },
+    {
+      "id": "direction",
+      "type": "enum",
+      "role": "style",
+      "label": "Direction",
+      "description": "Fall direction",
+      "default": "down",
+      "options": [
+        {
+          "value": "down",
+          "label": "Down"
+        },
+        {
+          "value": "up",
+          "label": "Up"
+        }
+      ]
+    },
+    {
+      "id": "bg",
+      "type": "color",
+      "role": "style",
+      "label": "Background",
+      "description": "Canvas base color",
+      "default": "#05060d"
+    },
+    {
+      "id": "scrim",
+      "type": "number",
+      "role": "style",
+      "label": "Scrim",
+      "description": "Black overlay strength for text readability 0-1",
+      "default": 0,
+      "min": 0,
+      "max": 1,
+      "step": 0.05
+    },
+    {
+      "id": "dim",
+      "type": "number",
+      "role": "style",
+      "label": "Dim",
+      "description": "De-bright / de-saturate 0-1",
+      "default": 0,
+      "min": 0,
+      "max": 1,
+      "step": 0.05
+    },
+    {
+      "id": "intro",
+      "type": "number",
+      "role": "style",
+      "label": "Intro",
+      "description": "Fade-in seconds",
+      "default": 0.6,
+      "min": 0,
+      "max": 3,
+      "step": 0.1
+    }
+  ],
+  "files": [
+    {
+      "path": "bg-matrix-portrait.html",
+      "target": "compositions/bg-matrix-portrait.html",
+      "type": "hyperframes:composition"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://hyperframes.heygen.com/schema/registry-item.json",
+  "name": "bg-particles",
+  "type": "hyperframes:block",
+  "title": "Particles Background — seamless linked particle field",
+  "description": "Seamlessly looping particle field: floating particles with near-neighbor links and soft glows (constellation / neural-net feel). Full-canvas, bottom track under text; scrim/dim keep copy readable. Landscape 16:9 twin of bg-particles-portrait (same source, re-laid out for aspect).",
+  "tags": ["background", "particles", "constellation", "network", "loop", "seamless", "landscape"],
+  "dimensions": { "width": 1920, "height": 1080 },
+  "duration": 60,
+  "variables": [
+    { "id": "colors", "type": "string", "role": "style", "label": "Colors", "description": "Comma-separated hex list", "default": "#22d3ee,#818cf8,#a78bfa", "maxLength": 200 },
+    { "id": "density", "type": "number", "role": "style", "label": "Density", "description": "Particle count (8-220)", "default": 95, "min": 8, "max": 220, "step": 5 },
+    { "id": "speed", "type": "number", "role": "style", "label": "Speed", "description": "Float speed feel (10-200)", "default": 50, "min": 10, "max": 200, "step": 10 },
+    { "id": "link_distance", "type": "number", "role": "style", "label": "Link distance", "description": "Near-neighbor link radius in px (40-400)", "default": 170, "min": 40, "max": 400, "step": 10 },
+    { "id": "intensity", "type": "number", "role": "style", "label": "Intensity", "description": "Link/glow brightness 0-1", "default": 0.9, "min": 0, "max": 1, "step": 0.05 },
+    { "id": "drift", "type": "number", "role": "style", "label": "Drift", "description": "Drift amplitude (10-200)", "default": 70, "min": 10, "max": 200, "step": 10 },
+    { "id": "bg", "type": "color", "role": "style", "label": "Background", "description": "Canvas base color", "default": "#05060d" },
+    { "id": "scrim", "type": "number", "role": "style", "label": "Scrim", "description": "Black overlay strength for text readability 0-1", "default": 0, "min": 0, "max": 1, "step": 0.05 },
+    { "id": "dim", "type": "number", "role": "style", "label": "Dim", "description": "De-bright / de-saturate 0-1", "default": 0, "min": 0, "max": 1, "step": 0.05 },
+    { "id": "intro", "type": "number", "role": "style", "label": "Intro", "description": "Fade-in seconds", "default": 0.6, "min": 0, "max": 3, "step": 0.1 }
+  ],
+  "files": [
+    { "path": "bg-particles.html", "target": "compositions/bg-particles.html", "type": "hyperframes:composition" }
+  ]
+}

@@ -3,8 +3,14 @@
   "name": "preset-sequence-layers-portrait",
   "type": "hyperframes:block",
   "title": "Sequence Layers — stacked card reveal, one layer at a time (portrait 9:16)",
-  "description": "Portrait variant. N large containers share one anchor region; each new layer flips over the previous one for step-by-step causal storytelling. Data-driven: inject items[].title to build layers.",
-  "tags": ["card", "sequence", "causal-chain", "data-driven", "portrait"],
+  "description": "N large containers share one anchor region; each new layer flips over the previous one (rotateY flip cover with evenly spaced edge reveal) for step-by-step causal storytelling. Data-driven: inject items[].title to build layers.",
+  "tags": [
+    "card",
+    "sequence",
+    "causal-chain",
+    "data-driven",
+    "portrait"
+  ],
   "dimensions": {
     "width": 1080,
     "height": 1920
