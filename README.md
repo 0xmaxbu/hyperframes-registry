@@ -29,6 +29,7 @@ npx hyperframes add preset-sequence-layers
 | 我们 | `bg-image` / `bg-video` / `bg-matrix` / `bg-particles` / `bg-bauhaus` / `bg-data-stream` / `bg-glitch`(各含 `-portrait`) | 背景块:一次性素材类(image/video,ken-burns + scrim)+ 循环算法类(其余,无缝 loop);全屏 track-0,横竖双比例画布自适应(算法重排,非裁切) |
 | 优化中(**未入索引,装不上**) | `bg-page-turn` / `bg-card-dance` / `bg-sliding-stripes` / `bg-kaleidoscope` / `bg-highlight-zoom`(各含 `-portrait`) | 阶段 3 产出(issues #2-6)整体标记**需要继续优化**:线条扫过硬切翻页 / AE 三合一瓦片波浪 / 奇偶反向条带 / 花瓣环绕万花筒 / 多跳焦点推近。generate-registry-items 的 WIP 表排除 → 远端 catalog 查不到、`add` 装不上;本地 lint/verify/渲染链照常 |
 | 搁置 | `bg-aurora` | 暂不实现(11 轮验收未收敛);约束全集与已证死的路见 [docs/deferred/bg-aurora.md](./docs/deferred/bg-aurora.md) |
+| 优化中(**未入索引,装不上**) | `text-word-stagger` / `text-center-burst` / `text-word-echo` / `text-bar-escort` / `text-focus-cycle` / `text-fold-swap`(各含 `-portrait`) | 文字编排族首批(issue #7):**中文优先**(Intl.Segmenter 分词,官方 72 条文字家族只有 word 空格/char,中文逐词全失效);`*词*` 内联强调;唯一循环块 focus-cycle。WIP 表排除,验收一个入一个 |
 | 我们 | `preset-sequence-layers` / `-portrait` | 逐层翻开卡片(内容块),数据驱动(items/config/accent/ink/surface/bg 变量) |
 | 官方 vendored | 381 条(blocks 154 / components 218 / examples 9) | 原样拷贝,勿手改;重跑 vendor 即覆盖同步 |
 
