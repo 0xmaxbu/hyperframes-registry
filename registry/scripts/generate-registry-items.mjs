@@ -14,22 +14,9 @@ const here = dirname(fileURLToPath(import.meta.url));
 const registryRoot = join(here, "..");
 
 // 优化中(WIP)条目:不进 registry.json 索引 —— 远端 catalog 查不到、add 装不上(硬保证)。
-// 文件保留在 blocks/ 下,本地 lint/verify/渲染链照常;优化验收通过后从此表移除并重跑本脚本。
+// 文件保留在 blocks/ 下,本地 lint/verify/渲染链照常;验收通过后从此表移除并重跑本脚本。
+// 2026-08-23:阶段 3 五块与文字族九块全部验收关门,表清空。新块默认先进此表。
 const WIP = new Set([
-  "bg-page-turn", "bg-page-turn-portrait",
-  "bg-card-dance", "bg-card-dance-portrait",
-  "bg-sliding-stripes", "bg-sliding-stripes-portrait",
-  "bg-kaleidoscope", "bg-kaleidoscope-portrait",
-  "bg-highlight-zoom", "bg-highlight-zoom-portrait",
-  "text-word-stagger", "text-word-stagger-portrait",
-  "text-center-burst", "text-center-burst-portrait",
-  "text-bar-escort", "text-bar-escort-portrait",
-  "text-focus-cycle", "text-focus-cycle-portrait",
-  "text-fold-swap", "text-fold-swap-portrait",
-  "text-masked-reveal", "text-masked-reveal-portrait",
-  "text-line-cascade", "text-line-cascade-portrait",
-  "text-bpm-bounce", "text-bpm-bounce-portrait",
-  "text-flip-3d", "text-flip-3d-portrait",
 ]);
 
 const items = [];

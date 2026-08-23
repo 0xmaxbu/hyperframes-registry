@@ -32,6 +32,14 @@
       "type": "hyperframes:block"
     },
     {
+      "name": "bg-card-dance",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "bg-card-dance-portrait",
+      "type": "hyperframes:block"
+    },
+    {
       "name": "bg-data-stream",
       "type": "hyperframes:block"
     },
@@ -48,11 +56,27 @@
       "type": "hyperframes:block"
     },
     {
+      "name": "bg-highlight-zoom",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "bg-highlight-zoom-portrait",
+      "type": "hyperframes:block"
+    },
+    {
       "name": "bg-image",
       "type": "hyperframes:block"
     },
     {
       "name": "bg-image-portrait",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "bg-kaleidoscope",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "bg-kaleidoscope-portrait",
       "type": "hyperframes:block"
     },
     {
@@ -64,11 +88,27 @@
       "type": "hyperframes:block"
     },
     {
+      "name": "bg-page-turn",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "bg-page-turn-portrait",
+      "type": "hyperframes:block"
+    },
+    {
       "name": "bg-particles",
       "type": "hyperframes:block"
     },
     {
       "name": "bg-particles-portrait",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "bg-sliding-stripes",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "bg-sliding-stripes-portrait",
       "type": "hyperframes:block"
     },
     {
@@ -521,6 +561,78 @@
     },
     {
       "name": "swirl-vortex",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "text-bar-escort",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "text-bar-escort-portrait",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "text-bpm-bounce",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "text-bpm-bounce-portrait",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "text-center-burst",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "text-center-burst-portrait",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "text-flip-3d",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "text-flip-3d-portrait",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "text-focus-cycle",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "text-focus-cycle-portrait",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "text-fold-swap",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "text-fold-swap-portrait",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "text-line-cascade",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "text-line-cascade-portrait",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "text-masked-reveal",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "text-masked-reveal-portrait",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "text-word-stagger",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "text-word-stagger-portrait",
       "type": "hyperframes:block"
     },
     {

@@ -13,7 +13,7 @@ _Avoid_: 背景 preset、background helper、背景组件
 _Avoid_: 前景 preset
 
 **素材堆叠类 (material-stack family)**:
-以素材(image)本身为画面主体的编排手法,分两支:多素材空间编排(page-turn)与单素材切分重组(card-dance、sliding-stripes、kaleidoscope、highlight-zoom)。与算法生成图案类背景(bg-matrix/bg-particles 等)的分界即在于画面主体是否为素材本体。全部以背景块形态交付;当前整体处于 needs-optimization(未入 registry 索引)。原计划的 9 种 expand.mjs 移植(drop-stack 等)已取消,不再属于本域。
+以素材(image)本身为画面主体的编排手法,分两支:多素材空间编排(page-turn)与单素材切分重组(card-dance、sliding-stripes、kaleidoscope、highlight-zoom)。与算法生成图案类背景(bg-matrix/bg-particles 等)的分界即在于画面主体是否为素材本体。全部以背景块形态交付并已入索引。原计划的 9 种 expand.mjs 移植(drop-stack 等)已取消,不再属于本域。
 _Avoid_: 素材类、堆叠 preset、"2-3 张卡片编排"(覆盖不了单图切分一支)
 
 **文字编排块 (text block)**:
