@@ -10,7 +10,7 @@
   "variables": [
     { "id": "src", "type": "image", "role": "content", "label": "Image", "description": "Full-bleed cover image (URL or project asset path)", "default": "assets/bg-image-placeholder.svg" },
     { "id": "move", "type": "enum", "role": "style", "label": "Camera move", "description": "Ken-burns move over scene_dur", "default": "push-in", "options": [{"value":"push-in","label":"Push in"},{"value":"zoom-in","label":"Zoom in"},{"value":"pull-out","label":"Pull out"},{"value":"zoom-out","label":"Zoom out"},{"value":"pan-left","label":"Pan left"},{"value":"pan-right","label":"Pan right"},{"value":"pan-up","label":"Pan up"},{"value":"pan-down","label":"Pan down"},{"value":"none","label":"None"}] },
-    { "id": "max_zoom", "type": "number", "role": "style", "label": "Max zoom", "description": "Ken-burns zoom ceiling (1-2)", "default": 1.15, "min": 1, "max": 2, "step": 0.05 },
+    { "id": "max_zoom", "type": "number", "role": "style", "label": "Max zoom", "description": "Ken-burns zoom base (1-2); pans auto-raise up to 2.0 to keep minimum travel", "default": 1.15, "min": 1, "max": 2, "step": 0.05 },
     { "id": "focus_x", "type": "number", "role": "style", "label": "Focus X", "description": "Transform origin X 0-1", "default": 0.5, "min": 0, "max": 1, "step": 0.05 },
     { "id": "focus_y", "type": "number", "role": "style", "label": "Focus Y", "description": "Transform origin Y 0-1", "default": 0.5, "min": 0, "max": 1, "step": 0.05 },
     { "id": "scrim", "type": "number", "role": "style", "label": "Scrim", "description": "Black overlay strength for text readability 0-1", "default": 0.35, "min": 0, "max": 1, "step": 0.05 },

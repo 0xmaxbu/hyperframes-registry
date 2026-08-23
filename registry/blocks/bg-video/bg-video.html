@@ -6,7 +6,7 @@
     {"id":"speed","type":"number","label":"Speed","description":"Playback rate (0.6-1)","default":1,"min":0.6,"max":1,"step":0.05},
     {"id":"play_from","type":"number","label":"Play from","description":"Source start offset in seconds","default":0,"min":0,"max":3600,"step":0.5},
     {"id":"move","type":"enum","label":"Camera move","description":"Ken-burns move over scene_dur","default":"push-in","options":[{"value":"push-in","label":"Push in"},{"value":"zoom-in","label":"Zoom in"},{"value":"pull-out","label":"Pull out"},{"value":"zoom-out","label":"Zoom out"},{"value":"pan-left","label":"Pan left"},{"value":"pan-right","label":"Pan right"},{"value":"pan-up","label":"Pan up"},{"value":"pan-down","label":"Pan down"},{"value":"none","label":"None"}]},
-    {"id":"max_zoom","type":"number","label":"Max zoom","description":"Ken-burns zoom ceiling (1-2)","default":1.12,"min":1,"max":2,"step":0.05},
+    {"id":"max_zoom","type":"number","label":"Max zoom","description":"Ken-burns zoom base (1-2); pans auto-raise up to 2.0 to keep minimum travel","default":1.12,"min":1,"max":2,"step":0.05},
     {"id":"focus_x","type":"number","label":"Focus X","description":"Transform origin X 0-1","default":0.5,"min":0,"max":1,"step":0.05},
     {"id":"focus_y","type":"number","label":"Focus Y","description":"Transform origin Y 0-1","default":0.5,"min":0,"max":1,"step":0.05},
     {"id":"scrim","type":"number","label":"Scrim","description":"Black overlay strength for text readability 0-1","default":0.35,"min":0,"max":1,"step":0.05},
@@ -73,15 +73,15 @@
         var sceneDur = clamp(V.scene_dur, 5, DUR, 15);
 
         var MOVES = {
-          "push-in":   { s0: 1, s1: "Z", x0: 0, y0: 0, x1: 0, y1: 0 },
-          "zoom-in":   { s0: 1, s1: "Z", x0: 0, y0: 0, x1: 0, y1: 0 },
-          "pull-out":  { s0: "Z", s1: 1, x0: 0, y0: 0, x1: 0, y1: 0 },
-          "zoom-out":  { s0: "Z", s1: 1, x0: 0, y0: 0, x1: 0, y1: 0 },
-          "pan-left":  { s0: "Z", s1: "Z", x0: "P", y0: 0, x1: "-P", y1: 0 },
-          "pan-right": { s0: "Z", s1: "Z", x0: "-P", y0: 0, x1: "P", y1: 0 },
-          "pan-up":    { s0: "Z", s1: "Z", x0: 0, y0: "P", x1: 0, y1: "-P" },
-          "pan-down":  { s0: "Z", s1: "Z", x0: 0, y0: "-P", x1: 0, y1: "P" },
-          "none":      { s0: 1, s1: 1, x0: 0, y0: 0, x1: 0, y1: 0 }
+          "push-in":   { s0: 1, s1: "Z", x0: 0, y0: 0, x1: 0, y1: 0, ax: null },
+          "zoom-in":   { s0: 1, s1: "Z", x0: 0, y0: 0, x1: 0, y1: 0, ax: null },
+          "pull-out":  { s0: "Z", s1: 1, x0: 0, y0: 0, x1: 0, y1: 0, ax: null },
+          "zoom-out":  { s0: "Z", s1: 1, x0: 0, y0: 0, x1: 0, y1: 0, ax: null },
+          "pan-left":  { s0: "Z", s1: "Z", x0: "P", y0: 0, x1: "-P", y1: 0, ax: "x" },
+          "pan-right": { s0: "Z", s1: "Z", x0: "-P", y0: 0, x1: "P", y1: 0, ax: "x" },
+          "pan-up":    { s0: "Z", s1: "Z", x0: 0, y0: "P", x1: 0, y1: "-P", ax: "y" },
+          "pan-down":  { s0: "Z", s1: "Z", x0: 0, y0: "-P", x1: 0, y1: "P", ax: "y" },
+          "none":      { s0: 1, s1: 1, x0: 0, y0: 0, x1: 0, y1: 0, ax: null }
         };
         var mv = MOVES[V.move] || MOVES["push-in"];
 
@@ -99,18 +99,52 @@
         if (playFrom !== 0) video.setAttribute("data-media-start", String(playFrom));
         if (speed !== 1) video.setAttribute("data-playback-rate", String(speed));
 
-        var w = root.clientWidth || 1920;
-        var pan = (maxZoom - 1) * 0.5 * w * 0.6;
-        function val(v) { return v === "Z" ? maxZoom : v === "P" ? pan : v === "-P" ? -pan : v; }
+        var w = root.clientWidth || 1920, h = root.clientHeight || 1080;
+
+        // 运镜固定规则(同 bg-image,媒体感知):行程 = clamp(余量×0.8, 100px, 420px) 且 ≤ 余量×0.8(永不露边);
+        // 余量不足自动抬 Z(≤2);pan 端点缓速回摆(boomerang)铺满上限;zoom 单调。
+        var TRAVEL_MIN = 100, TRAVEL_MAX = 420, SLACK_USE = 0.8, Z_CAP = 2;
 
         var tl = gsap.timeline({ paused: true });
-        tl.set(wrap, { transformOrigin: (fx * 100).toFixed(1) + "% " + (fy * 100).toFixed(1) + "%", scale: val(mv.s0), x: val(mv.x0), y: val(mv.y0) }, 0);
-        tl.to(wrap, { opacity: 1, duration: introDur, ease: "power2.out" }, 0);
-        tl.to(scrimEl, { opacity: scrim, duration: introDur, ease: "power2.out" }, 0);
-        var moveStart = Math.min(introDur * 0.3, sceneDur);
-        tl.to(wrap, { scale: val(mv.s1), x: val(mv.x1), y: val(mv.y1), duration: Math.max(0.1, sceneDur - moveStart), ease: "none" }, moveStart);
-        if (tl.duration() < DUR) tl.set({}, {}, DUR);
         window.__timelines["bg-video"] = tl;
+
+        function buildAll(mw, mh) {
+          if (!mw || !mh) { mw = w; mh = h; }
+          var cs = Math.max(w / mw, h / mh), rw = mw * cs, rh = mh * cs;
+          var Z = maxZoom, travel = 0;
+          if (mv.ax) {
+            var view = mv.ax === "x" ? w : h, rend = mv.ax === "x" ? rw : rh;
+            var zNeed = (view + TRAVEL_MIN / SLACK_USE) / rend;
+            Z = Math.min(Z_CAP, Math.max(maxZoom, zNeed));
+            travel = Math.min(SLACK_USE * (Z * rend - view), TRAVEL_MAX);
+          }
+          function val(v) { return v === "Z" ? Z : v === "P" ? travel * 0.5 : v === "-P" ? -travel * 0.5 : v; }
+          tl.clear();
+          tl.set(wrap, { transformOrigin: (fx * 100).toFixed(1) + "% " + (fy * 100).toFixed(1) + "%", scale: val(mv.s0), x: val(mv.x0), y: val(mv.y0) }, 0);
+          tl.to(wrap, { opacity: 1, duration: introDur, ease: "power2.out" }, 0);
+          tl.to(scrimEl, { opacity: scrim, duration: introDur, ease: "power2.out" }, 0);
+          var moveStart = Math.min(introDur * 0.3, sceneDur);
+          if (mv.ax && travel > 0) {
+            var p1 = { x: val(mv.x1), y: val(mv.y1) }, p0 = { x: val(mv.x0), y: val(mv.y0) };
+            var leg = Math.max(0.5, (sceneDur - moveStart) / 2), tt = moveStart, flip = false;
+            while (tt < DUR - 0.01) {
+              var d = Math.min(leg, DUR - tt);
+              tl.to(wrap, { x: (flip ? p0 : p1).x, y: (flip ? p0 : p1).y, duration: d, ease: "power1.inOut" }, tt);
+              flip = !flip; tt += d;
+            }
+          } else {
+            tl.to(wrap, { scale: val(mv.s1), x: val(mv.x1), y: val(mv.y1), duration: Math.max(0.1, sceneDur - moveStart), ease: "none" }, moveStart);
+          }
+          if (tl.duration() < DUR) tl.set({}, {}, DUR);
+        }
+
+        function dims() { return (video.readyState >= 1 && video.videoWidth) ? [video.videoWidth, video.videoHeight] : null; }
+        var d0 = dims();
+        buildAll(d0 ? d0[0] : w, d0 ? d0[1] : h);
+        if (!d0) {
+          var onMeta = function () { var dd = dims(); if (dd) { buildAll(dd[0], dd[1]); video.removeEventListener("loadedmetadata", onMeta); } };
+          video.addEventListener("loadedmetadata", onMeta);
+        }
       })();
     </script>
   </body>

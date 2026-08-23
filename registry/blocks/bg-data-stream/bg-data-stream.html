@@ -65,7 +65,7 @@
         var V = {};
         try { V = (window.__hyperframes && window.__hyperframes.getVariables) ? window.__hyperframes.getVariables() : {}; } catch (e) { V = {}; }
         var color = V.color || "#00ffcc";
-        var density = clamp(V.density, 8, 240, 90);
+        var density = clamp(V.density, 8, 300, 200);
         var speed = clamp(V.speed, 20, 400, 100);
         var charset = V.charset || "hex";
         var intensity = clamp(V.intensity, 0, 1, 0.82);
@@ -95,7 +95,7 @@
           return arr;
         }
 
-        var fontSize = 15;
+        var fontSize = 22;    // 块状字,与 bg-matrix 同族观感(列宽=字宽)
         var lineH = Math.round(fontSize * 1.4);
         var colWidth = Math.max(fontSize, Math.round(w / density));
         var actualCols = Math.min(density, Math.floor(w / colWidth));
@@ -111,7 +111,7 @@
           });
         }
 
-        // 纯函数 draw:CRT 余辉按距 head 位置衰减(比 bg-matrix 弱一档);周期相位 → seamless
+        // 纯函数 draw:亮度尾迹同 bg-matrix(head 最亮 → 前 5 字依次暗 → 第 5 字起恒定);周期相位 → seamless
         function draw(t, a) {
           ctx.globalAlpha = 1; ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
           ctx.font = fontSize + "px monospace"; ctx.textBaseline = "top"; ctx.textAlign = "center";
@@ -125,7 +125,7 @@
             for (var k = 0; k < n; k++) {
               var y = headY - dir * k * lineH;
               if (y < -fontSize || y > h + fontSize) continue;
-              var base = k === 0 ? Math.min(1, intensity + 0.35) : Math.pow(1 - k / n, 1.5) * intensity;
+              var base = k === 0 ? Math.min(1, intensity + 0.35) : (k < 5 ? 0.85 - 0.1 * k : 0.45) * intensity;
               if (base < 0.05) continue;
               ctx.globalAlpha = base * a;
               ctx.fillStyle = k === 0 ? "#d6fff6" : color;

@@ -3,7 +3,7 @@
   "name": "bg-bauhaus-portrait",
   "type": "hyperframes:block",
   "title": "Bauhaus Background — drifting geometric collage (portrait 9:16)",
-  "description": "Seamlessly looping bauhaus background: thick diagonal bars, hatched rotating circles, dots and wire spheres drift across a static dot-matrix, dark or light base. Full-canvas, bottom track under text. Landscape 16:9 twin of bg-bauhaus-portrait (same source, re-laid out for aspect).",
+  "description": "Seamlessly looping bauhaus background: thick diagonal bars, rolling hatched circles (spin tied to travel direction and speed), dots and wire spheres drift across a static dot-matrix, dark or light base. Full-canvas, bottom track under text. Landscape 16:9 twin of bg-bauhaus-portrait (same source, re-laid out for aspect).",
   "tags": [
     "background",
     "bauhaus",
@@ -55,7 +55,7 @@
       "type": "number",
       "role": "style",
       "label": "Rotation",
-      "description": "Hatched circle rotation (1-4)",
+      "description": "Corner wire-ball spin speed (1-4); hatched balls roll by travel physics",
       "default": 1,
       "min": 1,
       "max": 4,

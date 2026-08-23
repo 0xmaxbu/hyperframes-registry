@@ -12,8 +12,8 @@ import { buildHost, cleanup, listOurItems, repoRoot, tmpHost } from "./lib-host.
 
 // 每块的非默认验收变量 + 宿主时长(约 2×LOOP_CYCLE + 富余;一次性类按 scene_dur)
 const ACCEPT = {
-  "bg-matrix":       { dur: 18, vars: { charset: "zh", density: 120, color: "#7dd3fc", scrim: 0.2, dim: 0.2 } },
-  "bg-data-stream":  { dur: 18, vars: { charset: "digits", density: 70, color: "#a3e635", scrim: 0.2 } },
+  "bg-matrix":       { dur: 18, vars: { charset: "katakana", density: 260, scrim: 0.15, dim: 0.1 } },
+  "bg-data-stream":  { dur: 18, vars: { charset: "digits", density: 220, color: "#a3e635", scrim: 0.15 } },
   "bg-glitch":       { dur: 12, vars: { text: "SYSTEM BREACH", color: "#f43f5e", scrim: 0.15 } },
   "bg-aurora":       { dur: 22, vars: { colors: "#0ea5e9,#a855f7,#f97316", density: 7, base: "dark", scrim: 0.25 } },
   "bg-bauhaus":      { dur: 26, vars: { colors: "#7c5fc4,#3b6fb5,#ffffff,#e8746b", density: 1.4, base: "light" } },

@@ -3,7 +3,7 @@
   data-composition-variables='[
     {"id":"src","type":"image","label":"Image","description":"Full-bleed cover image (URL or project asset path)","default":"assets/bg-image-placeholder.svg"},
     {"id":"move","type":"enum","label":"Camera move","description":"Ken-burns move over scene_dur","default":"push-in","options":[{"value":"push-in","label":"Push in"},{"value":"zoom-in","label":"Zoom in"},{"value":"pull-out","label":"Pull out"},{"value":"zoom-out","label":"Zoom out"},{"value":"pan-left","label":"Pan left"},{"value":"pan-right","label":"Pan right"},{"value":"pan-up","label":"Pan up"},{"value":"pan-down","label":"Pan down"},{"value":"none","label":"None"}]},
-    {"id":"max_zoom","type":"number","label":"Max zoom","description":"Ken-burns zoom ceiling (1-2)","default":1.15,"min":1,"max":2,"step":0.05},
+    {"id":"max_zoom","type":"number","label":"Max zoom","description":"Ken-burns zoom base (1-2); pans auto-raise up to 2.0 to keep minimum travel","default":1.15,"min":1,"max":2,"step":0.05},
     {"id":"focus_x","type":"number","label":"Focus X","description":"Transform origin X 0-1","default":0.5,"min":0,"max":1,"step":0.05},
     {"id":"focus_y","type":"number","label":"Focus Y","description":"Transform origin Y 0-1","default":0.5,"min":0,"max":1,"step":0.05},
     {"id":"scrim","type":"number","label":"Scrim","description":"Black overlay strength for text readability 0-1","default":0.35,"min":0,"max":1,"step":0.05},
@@ -64,15 +64,15 @@
         var sceneDur = clamp(V.scene_dur, 5, DUR, 15);
 
         var MOVES = {
-          "push-in":   { s0: 1, s1: "Z", x0: 0, y0: 0, x1: 0, y1: 0 },
-          "zoom-in":   { s0: 1, s1: "Z", x0: 0, y0: 0, x1: 0, y1: 0 },
-          "pull-out":  { s0: "Z", s1: 1, x0: 0, y0: 0, x1: 0, y1: 0 },
-          "zoom-out":  { s0: "Z", s1: 1, x0: 0, y0: 0, x1: 0, y1: 0 },
-          "pan-left":  { s0: "Z", s1: "Z", x0: "P", y0: 0, x1: "-P", y1: 0 },
-          "pan-right": { s0: "Z", s1: "Z", x0: "-P", y0: 0, x1: "P", y1: 0 },
-          "pan-up":    { s0: "Z", s1: "Z", x0: 0, y0: "P", x1: 0, y1: "-P" },
-          "pan-down":  { s0: "Z", s1: "Z", x0: 0, y0: "-P", x1: 0, y1: "P" },
-          "none":      { s0: 1, s1: 1, x0: 0, y0: 0, x1: 0, y1: 0 }
+          "push-in":   { s0: 1, s1: "Z", x0: 0, y0: 0, x1: 0, y1: 0, ax: null },
+          "zoom-in":   { s0: 1, s1: "Z", x0: 0, y0: 0, x1: 0, y1: 0, ax: null },
+          "pull-out":  { s0: "Z", s1: 1, x0: 0, y0: 0, x1: 0, y1: 0, ax: null },
+          "zoom-out":  { s0: "Z", s1: 1, x0: 0, y0: 0, x1: 0, y1: 0, ax: null },
+          "pan-left":  { s0: "Z", s1: "Z", x0: "P", y0: 0, x1: "-P", y1: 0, ax: "x" },
+          "pan-right": { s0: "Z", s1: "Z", x0: "-P", y0: 0, x1: "P", y1: 0, ax: "x" },
+          "pan-up":    { s0: "Z", s1: "Z", x0: 0, y0: "P", x1: 0, y1: "-P", ax: "y" },
+          "pan-down":  { s0: "Z", s1: "Z", x0: 0, y0: "-P", x1: 0, y1: "P", ax: "y" },
+          "none":      { s0: 1, s1: 1, x0: 0, y0: 0, x1: 0, y1: 0, ax: null }
         };
         var mv = MOVES[V.move] || MOVES["push-in"];
 
@@ -84,19 +84,57 @@
         bgEl.style.background = bg;
         if (dim > 0) wrap.style.filter = "brightness(" + (1 - 0.45 * dim) + ") saturate(" + (1 - 0.6 * dim) + ")";
 
-        // 画布自适应:pan 幅度按实际宽度算(横竖孪生同源)
-        var w = root.clientWidth || 1920;
-        var pan = (maxZoom - 1) * 0.5 * w * 0.6;
-        function val(v) { return v === "Z" ? maxZoom : v === "P" ? pan : v === "-P" ? -pan : v; }
+        var w = root.clientWidth || 1920, h = root.clientHeight || 1080;
+
+        // 运镜固定规则(媒体感知):
+        //   行程 = clamp(素材该轴可用余量 × 0.8, 100px, 420px),且硬性 ≤ 余量×0.8 → 镜头永不露出素材边缘
+        //   余量不足以给出最小行程时,自动抬 Z(≤ 2.0)补足;zoom 类运镜保持单调推/拉
+        //   pan 到行程端点后缓速回摆(boomerang)交替往返,铺满 manifest 上限,宿主任意裁剪都成段
+        var TRAVEL_MIN = 100, TRAVEL_MAX = 420, SLACK_USE = 0.8, Z_CAP = 2;
 
         var tl = gsap.timeline({ paused: true });
-        tl.set(wrap, { transformOrigin: (fx * 100).toFixed(1) + "% " + (fy * 100).toFixed(1) + "%", scale: val(mv.s0), x: val(mv.x0), y: val(mv.y0) }, 0);
-        tl.to(wrap, { opacity: 1, duration: introDur, ease: "power2.out" }, 0);                 // 入场(bg 底色 → 图片)
-        tl.to(scrimEl, { opacity: scrim, duration: introDur, ease: "power2.out" }, 0);
-        var moveStart = Math.min(introDur * 0.3, sceneDur);
-        tl.to(wrap, { scale: val(mv.s1), x: val(mv.x1), y: val(mv.y1), duration: Math.max(0.1, sceneDur - moveStart), ease: "none" }, moveStart);
-        if (tl.duration() < DUR) tl.set({}, {}, DUR);                                            // 之后保持末态(宿主裁剪/退场)
-        window.__timelines["bg-image-portrait"] = tl;
+        window.__timelines["bg-image-portrait"] = tl;    // 先注册(字面量),move 细节在素材尺寸就绪后铺
+
+        function buildAll(mw, mh) {
+          if (!mw || !mh) { mw = w; mh = h; }
+          var cs = Math.max(w / mw, h / mh), rw = mw * cs, rh = mh * cs;   // cover 铺满后的素材渲染尺寸
+          var Z = maxZoom, travel = 0;
+          if (mv.ax) {
+            var view = mv.ax === "x" ? w : h, rend = mv.ax === "x" ? rw : rh;
+            var zNeed = (view + TRAVEL_MIN / SLACK_USE) / rend;            // 保证 0.8·余量 ≥ 最小行程
+            Z = Math.min(Z_CAP, Math.max(maxZoom, zNeed));
+            travel = Math.min(SLACK_USE * (Z * rend - view), TRAVEL_MAX);  // 像素上限防过快
+          }
+          function val(v) { return v === "Z" ? Z : v === "P" ? travel * 0.5 : v === "-P" ? -travel * 0.5 : v; }
+          tl.clear();
+          tl.set(wrap, { transformOrigin: (fx * 100).toFixed(1) + "% " + (fy * 100).toFixed(1) + "%", scale: val(mv.s0), x: val(mv.x0), y: val(mv.y0) }, 0);
+          tl.to(wrap, { opacity: 1, duration: introDur, ease: "power2.out" }, 0);
+          tl.to(scrimEl, { opacity: scrim, duration: introDur, ease: "power2.out" }, 0);
+          var moveStart = Math.min(introDur * 0.3, sceneDur);
+          if (mv.ax && travel > 0) {
+            var p1 = { x: val(mv.x1), y: val(mv.y1) }, p0 = { x: val(mv.x0), y: val(mv.y0) };
+            var leg = Math.max(0.5, (sceneDur - moveStart) / 2), tt = moveStart, flip = false;
+            while (tt < DUR - 0.01) {
+              var d = Math.min(leg, DUR - tt);
+              tl.to(wrap, { x: (flip ? p0 : p1).x, y: (flip ? p0 : p1).y, duration: d, ease: "power1.inOut" }, tt);
+              flip = !flip; tt += d;
+            }
+          } else {
+            tl.to(wrap, { scale: val(mv.s1), x: val(mv.x1), y: val(mv.y1), duration: Math.max(0.1, sceneDur - moveStart), ease: "none" }, moveStart);
+          }
+          if (tl.duration() < DUR) tl.set({}, {}, DUR);
+        }
+
+        function dims() { return (img.complete && img.naturalWidth) ? [img.naturalWidth, img.naturalHeight] : null; }
+        var d0 = dims();
+        buildAll(d0 ? d0[0] : w, d0 ? d0[1] : h);                          // 未就绪先按画布比例铺,防注册空档
+        if (!d0) {
+          var onReady = function () { var dd = dims(); if (dd) { buildAll(dd[0], dd[1]); img.removeEventListener("load", onReady); } };
+          img.addEventListener("load", onReady);
+          img.addEventListener("error", function () {                     // 自定义素材加载失败 → 回退占位图(触发 load 重建)
+            if (img.src.indexOf("bg-image-placeholder") < 0) img.src = "assets/bg-image-placeholder.svg";
+          });
+        }
       })();
     </script>
   </body>

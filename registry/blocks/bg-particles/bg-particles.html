@@ -78,19 +78,22 @@
             bx: hash01(i * 3 + 1), by: hash01(i * 5 + 2),
             ax: (0.02 + 0.05 * hash01(i * 7 + 3)) * (drift / 70), ay: (0.02 + 0.05 * hash01(i * 11 + 4)) * (drift / 70),
             px: hash01(i * 13 + 5) * 6.2832, py: hash01(i * 17 + 6) * 6.2832,
+            // 第二谐波:X/Y 各取不同整数倍频 + 独立相位 → 复合曲线(不规则游走,非规则椭圆)
+            px2: hash01(i * 29 + 8) * 6.2832, py2: hash01(i * 31 + 9) * 6.2832,
             r: 3 + 4 * hash01(i * 19 + 7), col: colors[i % colors.length]
           });
         }
 
-        // 纯函数 draw:坐标 = base + amp·sin(2π·freq·ph + phase) → 周期 LOOP_CYCLE 无缝;近距连线 + 光晕
+        // 纯函数 draw:坐标 = base + amp·(0.65·sin(2π·f·ph+p) + 0.35·sin(2π·(f+k)·ph+p2)),k_x=2/k_y=3
+        // 全部整数倍频 → 周期 LOOP_CYCLE 无缝;双谐波复合 → 不规则;近距连线 + 光晕
         function draw(t, a) {
           ctx.globalAlpha = 1; ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
           var ph = t / LOOP_CYCLE;
           var pos = new Float32Array(density * 2);
           for (var i = 0; i < density; i++) {
             var q = parts[i];
-            pos[i * 2] = (q.bx + q.ax * Math.sin(2 * Math.PI * freq * ph + q.px)) * w;
-            pos[i * 2 + 1] = (q.by + q.ay * Math.sin(2 * Math.PI * freq * ph + q.py)) * h;
+            pos[i * 2] = (q.bx + q.ax * (0.65 * Math.sin(2 * Math.PI * freq * ph + q.px) + 0.35 * Math.sin(2 * Math.PI * (freq + 2) * ph + q.px2))) * w;
+            pos[i * 2 + 1] = (q.by + q.ay * (0.65 * Math.sin(2 * Math.PI * freq * ph + q.py) + 0.35 * Math.sin(2 * Math.PI * (freq + 3) * ph + q.py2))) * h;
           }
           var link2 = link * link;
           ctx.lineWidth = 1.8;

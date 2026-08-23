@@ -3,7 +3,7 @@
   "name": "bg-data-stream-portrait",
   "type": "hyperframes:block",
   "title": "Data Stream Background — seamless hex data rain (portrait 9:16)",
-  "description": "Seamlessly looping data-stream background: medium-density hex/digit columns with soft CRT-decay trails (calmer than bg-matrix). Full-canvas, bottom track under text; scrim/dim keep copy readable. Landscape 16:9 twin of bg-data-stream-portrait (same source, re-laid out for aspect).",
+  "description": "Seamlessly looping data-stream background: dense hex/digit columns, movie-style trails (bright head, first 5 chars dim in sequence, constant after). Full-canvas, bottom track under text; scrim/dim keep copy readable. Landscape 16:9 twin of bg-data-stream-portrait (same source, re-laid out for aspect).",
   "tags": [
     "background",
     "data-stream",
@@ -32,10 +32,10 @@
       "type": "number",
       "role": "style",
       "label": "Density",
-      "description": "Max column count (8-240)",
-      "default": 90,
+      "description": "Max column count (8-300)",
+      "default": 200,
       "min": 8,
-      "max": 240,
+      "max": 300,
       "step": 4
     },
     {
