@@ -27,7 +27,7 @@ npx hyperframes add preset-sequence-layers
 | 来源 | 条目 | 说明 |
 |---|---|---|
 | 我们 | `bg-image` / `bg-video` / `bg-matrix` / `bg-particles` / `bg-bauhaus` / `bg-data-stream` / `bg-glitch`(各含 `-portrait`) | 背景块:一次性素材类(image/video,ken-burns + scrim)+ 循环算法类(其余,无缝 loop);全屏 track-0,横竖双比例画布自适应(算法重排,非裁切) |
-| 我们 | `bg-page-turn` / `bg-card-dance` / `bg-sliding-stripes` / `bg-kaleidoscope` / `bg-highlight-zoom`(各含 `-portrait`) | 阶段 3 spec 先行素材堆叠类(issues #2-6):剥离卷曲翻页 / AE 三合一瓦片波浪 / 奇偶反向条带 / 花瓣环绕万花筒 / 多跳焦点推近;前 2+万花筒+条带为无缝 loop,翻页与推近为一次性 scene_dur |
+| 优化中(**未入索引,装不上**) | `bg-page-turn` / `bg-card-dance` / `bg-sliding-stripes` / `bg-kaleidoscope` / `bg-highlight-zoom`(各含 `-portrait`) | 阶段 3 产出(issues #2-6)整体标记**需要继续优化**:线条扫过硬切翻页 / AE 三合一瓦片波浪 / 奇偶反向条带 / 花瓣环绕万花筒 / 多跳焦点推近。generate-registry-items 的 WIP 表排除 → 远端 catalog 查不到、`add` 装不上;本地 lint/verify/渲染链照常 |
 | 搁置 | `bg-aurora` | 暂不实现(11 轮验收未收敛);约束全集与已证死的路见 [docs/deferred/bg-aurora.md](./docs/deferred/bg-aurora.md) |
 | 我们 | `preset-sequence-layers` / `-portrait` | 逐层翻开卡片(内容块),数据驱动(items/config/accent/ink/surface/bg 变量) |
 | 官方 vendored | 381 条(blocks 154 / components 218 / examples 9) | 原样拷贝,勿手改;重跑 vendor 即覆盖同步 |

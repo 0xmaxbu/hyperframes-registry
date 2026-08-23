@@ -13,6 +13,16 @@ import { dirname, join } from "node:path";
 const here = dirname(fileURLToPath(import.meta.url));
 const registryRoot = join(here, "..");
 
+// 优化中(WIP)条目:不进 registry.json 索引 —— 远端 catalog 查不到、add 装不上(硬保证)。
+// 文件保留在 blocks/ 下,本地 lint/verify/渲染链照常;优化验收通过后从此表移除并重跑本脚本。
+const WIP = new Set([
+  "bg-page-turn", "bg-page-turn-portrait",
+  "bg-card-dance", "bg-card-dance-portrait",
+  "bg-sliding-stripes", "bg-sliding-stripes-portrait",
+  "bg-kaleidoscope", "bg-kaleidoscope-portrait",
+  "bg-highlight-zoom", "bg-highlight-zoom-portrait",
+]);
+
 const items = [];
 for (const typeDir of ["blocks", "components", "examples"]) {
   const typePath = join(registryRoot, typeDir);
@@ -26,6 +36,7 @@ for (const typeDir of ["blocks", "components", "examples"]) {
     continue; // 目录尚不存在（批次未开始）
   }
   for (const name of names) {
+    if (WIP.has(name)) { console.log(`- skip WIP: ${typeDir}/${name}`); continue; }
     const manifestPath = join(typePath, name, "registry-item.json");
     let manifest;
     try {

@@ -19,7 +19,7 @@ const ACCEPT = {
   "bg-particles":    { dur: 26, vars: { colors: "#f472b6,#facc15", density: 130, link_distance: 140, scrim: 0.2 } },
   "bg-image":        { dur: 15, vars: { move: "pan-right", max_zoom: 1.25, scrim: 0.45, dim: 0.3, scene_dur: 15 } },
   "bg-video":        { dur: 15, vars: { move: "push-in", max_zoom: 1.2, scrim: 0.4, dim: 0.25, scene_dur: 15 } },
-  "bg-page-turn":    { dur: 15, vars: { turn_dur: 2.6, dwell: 1.0, flex: 0.8, paper: "#efe6d0", scrim: 0.45, dim: 0.15, scene_dur: 15 } },
+  "bg-page-turn":    { dur: 15, vars: { turn_dur: 2.0, dwell: 1.0, scrim: 0.45, dim: 0.15, scene_dur: 15 } },
   "bg-card-dance":   { dur: 18, vars: { wave_amp: 0.7, wave_speed: 1.5, gap: 3, angle: "0", scrim: 0.3 } },
   "bg-sliding-stripes": { dur: 16, vars: { stripes: 18, speed: 2, max_shift: 200, scrim: 0.3 } },
   "bg-kaleidoscope":  { dur: 18, vars: { segments: 10, speed: 1, breathe: 0.8, center_scale: 1.15, scrim: 0.3 } },
