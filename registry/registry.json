@@ -32,6 +32,14 @@
       "type": "hyperframes:block"
     },
     {
+      "name": "bg-card-dance",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "bg-card-dance-portrait",
+      "type": "hyperframes:block"
+    },
+    {
       "name": "bg-data-stream",
       "type": "hyperframes:block"
     },
@@ -48,11 +56,27 @@
       "type": "hyperframes:block"
     },
     {
+      "name": "bg-highlight-zoom",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "bg-highlight-zoom-portrait",
+      "type": "hyperframes:block"
+    },
+    {
       "name": "bg-image",
       "type": "hyperframes:block"
     },
     {
       "name": "bg-image-portrait",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "bg-kaleidoscope",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "bg-kaleidoscope-portrait",
       "type": "hyperframes:block"
     },
     {
@@ -64,11 +88,27 @@
       "type": "hyperframes:block"
     },
     {
+      "name": "bg-page-turn",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "bg-page-turn-portrait",
+      "type": "hyperframes:block"
+    },
+    {
       "name": "bg-particles",
       "type": "hyperframes:block"
     },
     {
       "name": "bg-particles-portrait",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "bg-sliding-stripes",
+      "type": "hyperframes:block"
+    },
+    {
+      "name": "bg-sliding-stripes-portrait",
       "type": "hyperframes:block"
     },
     {
