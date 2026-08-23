@@ -94,6 +94,7 @@
             ax: 0.03 + 0.03 * hash01(i * 7 + 3), ay: 0.03 + 0.03 * hash01(i * 9 + 4),
             px: hash01(i * 13 + 1) * Math.PI * 2, py: hash01(i * 19 + 2) * Math.PI * 2,
             px2: hash01(i * 13 + 11) * Math.PI * 2, py2: hash01(i * 19 + 12) * Math.PI * 2,
+            dk: 1 + (i % 2), dp: hash01(i * 47 + 2) * Math.PI * 2,          // 深度键频率/相位(整倍频 → 无缝)
             R: 0.45 + 0.17 * hash01(i * 23 + 5), harm: harm, color: colors[i % colors.length]
           });
         }
@@ -121,7 +122,12 @@
           var ph = t / LOOP_CYCLE;
           ctx.globalAlpha = 1; ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
           var R0 = Math.min(w, h);
-          for (var i = 0; i < density; i++) {
+          // 动态叠压:按深度键排序绘制(键大的后画 = 在上层)→ 色块轮流被遮挡,无永久顶层
+          var order = [];
+          for (var oi = 0; oi < density; oi++) order.push(oi);
+          order.sort(function (a, b) { return Math.sin(2 * Math.PI * blobs[b].dk * ph + blobs[b].dp) - Math.sin(2 * Math.PI * blobs[a].dk * ph + blobs[a].dp); });
+          for (var si = 0; si < order.length; si++) {
+            var i = order[si];
             var b = blobs[i];
             // 中心漂移双谐波(基频+2×,不同相位)→ 不规则路径,非规则圆轨道;R 呼吸脉动(整数倍频,无缝)
             var cx = (b.bx + b.ax * Math.sin(2 * Math.PI * freq * ph + b.px) + 0.4 * b.ax * Math.sin(2 * Math.PI * (freq + 2) * ph + b.px2)) * w;
